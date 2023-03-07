@@ -21,6 +21,7 @@ val Redis4catsVersion = "1.4.0"
 
 lazy val root = (project in file(".")).settings(
     name := "scala-bench-ta-stock",
+    compileOrder := CompileOrder.JavaThenScala,
     libraryDependencies ++= Seq(
       "org.typelevel" %% "kittens" % KittenVersion,
       "org.typelevel" %% "cats-mtl" % CatsMTLVersion,
