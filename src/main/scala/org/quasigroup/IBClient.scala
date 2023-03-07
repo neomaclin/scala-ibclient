@@ -14,10 +14,9 @@ object IBClient {
 
   def buildVersionString(minVersion: Int, maxVersion: Int) = "v" + (if (minVersion < maxVersion) minVersion + ".." + maxVersion else minVersion)
 
-  def client[F[_]: Async: Console: Network](host: Host = host"127.0.0.1", port: Port = port"8080"):  Stream[F, Unit] =
+  def twsClient[F[_]: Async: Console: Network](host: Host = host"127.0.0.1", port: Port = port"8080"):  Stream[F, Unit] =
     Stream.resource(Network[F].client(SocketAddress(host, port))).flatMap { socket =>
-        Stream.chunk(Chunk.array("API\0".getBytes ++ EMPTY_LENGTH_HEADER ++ buildVersionString(MIN_VERSION, MAX_VERSION).getBytes))
-          .through(socket.writes) ++
+        Stream.eval(socket.write(Chunk.array("API\0".getBytes ++ EMPTY_LENGTH_HEADER ++ buildVersionString(MIN_VERSION, MAX_VERSION).getBytes))) ++
           socket.reads
           .through(text.utf8.decode)
           .foreach { response =>
@@ -25,4 +24,14 @@ object IBClient {
           }
     }
 
+//  def FIXClient[F[_] : Async : Console : Network](host: Host = host"127.0.0.1", port: Port = port"8080"): Stream[F, Unit] =
+//    Stream.resource(Network[F].client(SocketAddress(host, port))).flatMap { socket =>
+//      Stream.chunk()
+//        .through(socket.writes) ++
+//        socket.reads
+//          .through(text.utf8.decode)
+//          .foreach { response =>
+//            Console[F].println(s"Response: $response")
+//          }
+//    }
 }
