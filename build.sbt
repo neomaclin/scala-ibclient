@@ -1,4 +1,4 @@
-ThisBuild / organization := "com.example"
+ThisBuild / organization := "org.quasigroup"
 ThisBuild / scalaVersion := "2.13.10"
 
 val Http4sVersion = "0.23.18"
@@ -20,7 +20,7 @@ val Redis4catsVersion = "1.4.0"
 //val QuillVersion = "4.6.0"
 
 lazy val root = (project in file(".")).settings(
-    name := "cats-effect-3-quick-start",
+    name := "scala-bench-ta-stock",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "kittens" % KittenVersion,
       "org.typelevel" %% "cats-mtl" % CatsMTLVersion,
