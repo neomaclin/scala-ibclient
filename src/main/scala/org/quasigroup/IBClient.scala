@@ -33,21 +33,17 @@ object IBClient {
     (((bytes(0) << 24) + (bytes(1) << 16) + (bytes(2) << 8) + (bytes(3) << 0)) & 0xffffffffL).toInt
   }
 
-  //final case class LoginAck(version: Int, timeSTamp: String)
-
-
-  val ibFrames: StreamDecoder[ByteVector] =
-    StreamDecoder.many(bytes(4)).flatMap(sizeInByte => StreamDecoder.once(bytes(bytesToLength(sizeInByte))))
 
   val ibFramesString: StreamDecoder[String] =
     StreamDecoder.many(bytes(4)).flatMap(sizeInByte => StreamDecoder.once(utf8))
 
+
   def twsClient[F[_] : Async : Console : Network](host: Host = host"127.0.0.1", port: Port = port"7496"): Stream[F, Unit] =
     Stream.resource(Network[F].client(SocketAddress(host, port))).flatMap { socket =>
       Stream.eval(socket.write(Chunk.array("API\u0000".getBytes) ++ lengthToChunkBytes(sizeOfBuildVersion(MIN_VERSION, MAX_VERSION)) ++ Chunk.array(buildVersionString(MIN_VERSION, MAX_VERSION).getBytes))) ++
-        socket.reads.through(ibFramesString.toPipeByte)
+        socket.reads.through(ibFramesString.toPipeByte).flatMap(str => Stream(str.split('\u0000'):_*))
           .foreach { response =>
-            Console[F].println(s"Response: ${response}")
+            Console[F].println(s"Response: $response")
           }
     }
 
