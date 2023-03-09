@@ -6,5 +6,5 @@ import cats.effect.IO
 object Main extends IOApp.Simple {
 
   def run: IO[Unit] =
-    IBClient.client[IO]().compile.drain
+    IBClient.twsClient[IO]().compile.drain
 }

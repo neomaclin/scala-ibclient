@@ -1,6 +1,7 @@
 ThisBuild / organization := "org.quasigroup"
 ThisBuild / scalaVersion := "2.13.10"
 
+val FS2Version = "3.6.1"
 val Http4sVersion = "0.23.18"
 val LogbackVersion = "1.4.5"
 val WeaverVersion = "0.8.1"
@@ -21,7 +22,7 @@ val Redis4catsVersion = "1.4.0"
 
 lazy val root = (project in file(".")).settings(
     name := "scala-bench-ta-stock",
-    compileOrder := CompileOrder.JavaThenScala,
+    //compileOrder := CompileOrder.JavaThenScala,
     libraryDependencies ++= Seq(
       "org.typelevel" %% "kittens" % KittenVersion,
       "org.typelevel" %% "cats-mtl" % CatsMTLVersion,
@@ -50,6 +51,9 @@ lazy val root = (project in file(".")).settings(
 //      "io.github.jmcardon" %% "tsec-password" % TsecVersion,
 //      "dev.profunktor" %% "redis4cats-effects" % Redis4catsVersion,
 //      "dev.profunktor" %% "redis4cats-log4cats" % Redis4catsVersion,
+      "co.fs2"%% "fs2-core" % FS2Version,
+      "co.fs2"%% "fs2-io" % FS2Version,
+      "co.fs2"%% "fs2-scodec" % FS2Version,
 
       "org.scala-lang.modules" %% "scala-parser-combinators"% "2.2.0",
       "com.disneystreaming" %% "weaver-cats" % WeaverVersion % Test,
