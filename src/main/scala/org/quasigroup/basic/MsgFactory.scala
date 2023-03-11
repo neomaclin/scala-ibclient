@@ -1,0 +1,102 @@
+package org.quasigroup.basic
+
+object MsgFactory {
+
+  // incoming msg id's
+  val END_CONN = -1
+  val TICK_PRICE = 1
+  val TICK_SIZE = 2
+  val ORDER_STATUS = 3
+  val ERR_MSG = 4
+  val OPEN_ORDER = 5
+  val ACCT_VALUE = 6
+  val PORTFOLIO_VALUE = 7
+  val ACCT_UPDATE_TIME = 8
+  val NEXT_VALID_ID = 9
+  val CONTRACT_DATA = 10
+  val EXECUTION_DATA = 11
+  val MARKET_DEPTH = 12
+  val MARKET_DEPTH_L2 = 13
+  val NEWS_BULLETINS = 14
+  val MANAGED_ACCTS = 15
+  val RECEIVE_FA = 16
+  val HISTORICAL_DATA = 17
+  val BOND_CONTRACT_DATA = 18
+  val SCANNER_PARAMETERS = 19
+  val SCANNER_DATA = 20
+  val TICK_OPTION_COMPUTATION = 21
+  val TICK_GENERIC = 45
+  val TICK_STRING = 46
+  val TICK_EFP = 47
+  val CURRENT_TIME = 49
+  val REAL_TIME_BARS = 50
+  val FUNDAMENTAL_DATA = 51
+  val CONTRACT_DATA_END = 52
+  val OPEN_ORDER_END = 53
+  val ACCT_DOWNLOAD_END = 54
+  val EXECUTION_DATA_END = 55
+  val DELTA_NEUTRAL_VALIDATION = 56
+  val TICK_SNAPSHOT_END = 57
+  val MARKET_DATA_TYPE = 58
+  val COMMISSION_REPORT = 59
+  val POSITION = 61
+  val POSITION_END = 62
+  val ACCOUNT_SUMMARY = 63
+  val ACCOUNT_SUMMARY_END = 64
+  val VERIFY_MESSAGE_API = 65
+  val VERIFY_COMPLETED = 66
+  val DISPLAY_GROUP_LIST = 67
+  val DISPLAY_GROUP_UPDATED = 68
+  val VERIFY_AND_AUTH_MESSAGE_API = 69
+  val VERIFY_AND_AUTH_COMPLETED = 70
+  
+  def from(msgId: Int): Int = msgId match {
+    case END_CONN => 0
+    case TICK_PRICE => 1
+    case TICK_SIZE => 2
+    case ORDER_STATUS => 3
+    case ERR_MSG => 4
+    case OPEN_ORDER => 5
+    case ACCT_VALUE => 6
+    case PORTFOLIO_VALUE => 7
+    case ACCT_UPDATE_TIME => 8
+    case NEXT_VALID_ID => 9
+    case CONTRACT_DATA => 10
+    case EXECUTION_DATA => 11
+    case MARKET_DEPTH => 12
+    case MARKET_DEPTH_L2 => 13
+    case NEWS_BULLETINS => 14
+    case MANAGED_ACCTS => 15
+    case RECEIVE_FA => 16
+    case HISTORICAL_DATA => 17
+    case BOND_CONTRACT_DATA => 18
+    case SCANNER_PARAMETERS => 19
+    case SCANNER_DATA => 20
+    case TICK_OPTION_COMPUTATION => 21
+    case TICK_GENERIC => 45
+    case TICK_STRING => 46
+    case TICK_EFP => 47
+    case CURRENT_TIME => 49
+    case REAL_TIME_BARS => 50
+    case FUNDAMENTAL_DATA => 51
+    case CONTRACT_DATA_END => 52
+    case OPEN_ORDER_END => 53
+    case ACCT_DOWNLOAD_END => 54
+    case EXECUTION_DATA_END => 55
+    case DELTA_NEUTRAL_VALIDATION => 56
+    case TICK_SNAPSHOT_END => 57
+    case MARKET_DATA_TYPE => 58
+    case COMMISSION_REPORT => 59
+    case POSITION => 61
+    case POSITION_END => 62
+    case ACCOUNT_SUMMARY => 63
+    case ACCOUNT_SUMMARY_END => 64
+    case VERIFY_MESSAGE_API => 65
+    case VERIFY_COMPLETED => 66
+    case DISPLAY_GROUP_LIST => 67
+    case DISPLAY_GROUP_UPDATED => 68
+    case VERIFY_AND_AUTH_MESSAGE_API => 69
+    case VERIFY_AND_AUTH_COMPLETED => 70
+  }
+
+}
