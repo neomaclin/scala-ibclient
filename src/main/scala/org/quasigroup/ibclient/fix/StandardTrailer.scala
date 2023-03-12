@@ -1,4 +1,4 @@
-package org.quasigroup.fix
+package org.quasigroup.ibclient.fix
 
 class StandardTrailer {
   def toFIX(sum: Int): String = {

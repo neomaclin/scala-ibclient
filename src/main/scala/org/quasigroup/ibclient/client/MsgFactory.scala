@@ -1,4 +1,4 @@
-package org.quasigroup.basic
+package org.quasigroup.ibclient.client
 
 object MsgFactory {
 

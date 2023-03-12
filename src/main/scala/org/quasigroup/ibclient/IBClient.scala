@@ -1,4 +1,4 @@
-package org.quasigroup
+package org.quasigroup.ibclient
 
 import fs2.{Chunk, Stream, text}
 import cats.effect.{Async, Resource}
@@ -9,8 +9,8 @@ import scodec.codecs._
 import fs2.interop.scodec._
 import cats.syntax.all._
 import com.comcast.ip4s._
-import org.quasigroup.EMessage.EMPTY_LENGTH_HEADER
-import org.quasigroup.IBClient.{MAX_VERSION, MIN_VERSION, buildVersionString, lengthToChunkBytes, sizeOfBuildVersion}
+import EMessage.EMPTY_LENGTH_HEADER
+import IBClient.{MAX_VERSION, MIN_VERSION, buildVersionString, lengthToChunkBytes, sizeOfBuildVersion}
 
 
 
