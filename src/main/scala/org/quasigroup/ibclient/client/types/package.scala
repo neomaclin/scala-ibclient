@@ -1,51 +1,169 @@
 package org.quasigroup.ibclient.client.types
 
-final case class ComboLeg(p_conId: Int, p_ratio: Int, p_action: Nothing, p_exchange: Nothing,
-                          p_openClose: Int, p_shortSaleSlot: Int, p_designatedLocation: Nothing, p_exemptCode: Int)
-final case class Contract(p_conId: Int, p_symbol: String, p_secType: String, p_expiry: String,
-                          p_strike: Double, p_right: String, p_multiplier: String,
-                          p_exchange: String, p_currency: String, p_localSymbol: String, p_tradingClass: String, p_comboLegs: List[ComboLeg], p_primaryExch: String, p_includeExpired: Boolean,
-                          p_secIdType: String, p_secId: String )
-final case class ContractDetails(p_contract: Contract, p_marketName: String, p_minTick: Double, p_orderTypes: String, p_validExchanges: String, p_underConId: Int, p_longName: String, p_contractMonth: String, p_industry: String, p_category: String, p_subcategory: String, p_timeZoneId: String, p_tradingHours: String, p_liquidHours: String, p_evRule: String, p_evMultiplier: Double)
+import cats.data.State
+
+opaque type BitMask = State[Int, Boolean]
+
+opaque type Decimal = BigDecimal
+//object BitMask
+//final case class BitMask(mask: Int){
+//  def clear: BitMask = BitMask(0)
+//  def get(index: Int): Boolean = (mask & (1 << index)) != 0
+//  def set(index: Int, element: Boolean): (BitMask, Boolean)
+//}
+final case class TagValue(tag: String, value: String)
+
+final case class ComboLeg(
+    conId: Int,
+    ratio: Int,
+    action: Nothing,
+    exchange: Nothing,
+    openClose: Int,
+    shortSaleSlot: Int,
+    designatedLocation: Nothing,
+    exemptCode: Int
+)
+
+final case class Contract(
+    conId: Int,
+    symbol: String,
+    secType: String,
+    expiry: String,
+    strike: Double,
+    right: String,
+    multiplier: String,
+    exchange: String,
+    currency: String,
+    localSymbol: String,
+    tradingClass: String,
+    comboLegs: List[ComboLeg],
+    primaryExch: String,
+    includeExpired: Boolean,
+    secIdType: String,
+    secId: String
+)
+
+final case class ContractDetails(
+    contract: Contract,
+    marketName: String,
+    minTick: Double,
+    orderTypes: String,
+    validExchanges: String,
+    underConId: Int,
+    longName: String,
+    contractMonth: String,
+    industry: String,
+    category: String,
+    subcategory: String,
+    timeZoneId: String,
+    tradingHours: String,
+    liquidHours: String,
+    evRule: String,
+    evMultiplier: Double
+)
+final case class ContractDescription(contract: Contract, derivativeSecTypes: List[String])
 final case class DeltaNeutralContract(conid: Int, delta: Double, price: Double)
 
-object ComboLeg {
-  enum OpenClose {
+object ComboLeg:
+  enum OpenClose:
     case Same, Open, Close, Unknown
-  }
-}
+end ComboLeg
 
-enum ComboParam {
+enum ComboParam:
   case NonGuaranteed, PriceCondConid, CondPriceMax, CondPriceMin,
     ChangeToMktTime1, ChangeToMktTime2, DiscretionaryPct, DontLeginNext,
     LeginPrio, MaxSegSize
-}
+end ComboParam
 
-enum AlgoParam {
-  case startTime, endTime, allowPastEndTime, maxPctVol, pctVol, strategyType,
-    noTakeLiq, riskAversion, forceCompletion, displaySize, getDone,
-    noTradeAhead, useOddLots,
-    componentSize, timeBetweenOrders, randomizeTime20, randomizeSize55,
-    giveUp, catchUp, waitForFill
-}
+enum AlgoParam:
+  case StartTime, EndTime, AllowPastEndTime, MaxPctVol, PctVol, StrategyType,
+    NoTakeLiq, RiskAversion, ForceCompletion, DisplaySize, GetDone,
+    NoTradeAhead, UseOddLots,
+    ComponentSize, TimeBetweenOrders, RandomizeTime20, RandomizeSize55,
+    GiveUp, CatchUp, WaitForFill
+end AlgoParam
 
-enum HedgeType {
+enum AlgoStrategy(val params: List[AlgoParam]):
+  case None extends AlgoStrategy(Nil)
+  case Vwap
+      extends AlgoStrategy(
+        List(
+          AlgoParam.StartTime,
+          AlgoParam.EndTime,
+          AlgoParam.MaxPctVol,
+          AlgoParam.NoTakeLiq,
+          AlgoParam.GetDone,
+          AlgoParam.NoTradeAhead,
+          AlgoParam.UseOddLots
+        )
+      )
+  case Twap
+      extends AlgoStrategy(
+        List(
+          AlgoParam.StartTime,
+          AlgoParam.EndTime,
+          AlgoParam.AllowPastEndTime,
+          AlgoParam.StrategyType
+        )
+      )
+  case ArrivalPx
+      extends AlgoStrategy(
+        List(
+          AlgoParam.StartTime,
+          AlgoParam.EndTime,
+          AlgoParam.AllowPastEndTime,
+          AlgoParam.MaxPctVol,
+          AlgoParam.RiskAversion,
+          AlgoParam.ForceCompletion
+        )
+      )
+  case DarkIce
+      extends AlgoStrategy(
+        List(
+          AlgoParam.StartTime,
+          AlgoParam.EndTime,
+          AlgoParam.AllowPastEndTime,
+          AlgoParam.DisplaySize
+        )
+      )
+  case PctVol
+      extends AlgoStrategy(
+        List(
+          AlgoParam.StartTime,
+          AlgoParam.EndTime,
+          AlgoParam.PctVol,
+          AlgoParam.NoTakeLiq
+        )
+      )
+  case AD
+      extends AlgoStrategy(
+        List(
+          AlgoParam.StartTime,
+          AlgoParam.EndTime,
+          AlgoParam.ComponentSize,
+          AlgoParam.TimeBetweenOrders,
+          AlgoParam.RandomizeTime20,
+          AlgoParam.RandomizeSize55,
+          AlgoParam.GiveUp,
+          AlgoParam.CatchUp,
+          AlgoParam.WaitForFill
+        )
+      )
+end AlgoStrategy
+
+enum HedgeType:
   case None, Delta, Beta, Fx, Pair
-}
 
-enum Right {
+enum Right:
   case None, Put, Call
-}
 
-enum VolatilityType {
+enum VolatilityType:
   case None, Daily, Annual
-}
 
-enum ReferencePriceType {
+enum ReferencePriceType:
   case None, Midpoint, BidOrAsk
-}
 
-enum TriggerMethod(val value: Int) {
+enum TriggerMethod(val value: Int):
   case Default extends TriggerMethod(0)
   case DoubleBidAsk extends TriggerMethod(1)
   case Last extends TriggerMethod(2)
@@ -53,13 +171,12 @@ enum TriggerMethod(val value: Int) {
   case BidAsk extends TriggerMethod(4)
   case LastOrBidAsk extends TriggerMethod(7)
   case Midpoint extends TriggerMethod(8)
-}
+end TriggerMethod
 
-enum Action {
+enum Action:
   case BUY, SELL, SSHORT
-}
 
-enum Rule80A(val value: String) {
+enum Rule80A(val value: String):
   case None extends Rule80A("")
   case IndivArb extends Rule80A("J")
   case IndivBigNonArb extends Rule80A("K")
@@ -67,79 +184,65 @@ enum Rule80A(val value: String) {
   case INST_ARB extends Rule80A("U")
   case InstBigNonArb extends Rule80A("Y")
   case InstSmallNonArb extends Rule80A("A")
-}
+end Rule80A
 
-enum OcaType {
+enum OcaType:
   case None, CancelWithBlocking, ReduceWithBlocking, ReduceWithoutBlocking
-}
 
-enum TimeInForce {
+enum TimeInForce:
   case DAY, GTC, OPG, IOC, GTD, GTT, AUC, FOK, GTX, DTC
-}
 
-enum ExerciseType {
+enum ExerciseType:
   case None, Exercise, Lapse
-}
 
-enum FundamentalType {
+enum FundamentalType:
   case ReportSnapshot, ReportsFinSummary, ReportRatios, ReportsFinStatements,
     RESC, CalendarReport
-}
 
-enum WhatToShow {
+enum WhatToShow:
   case TRADES, MIDPOINT, BID,
     ASK, // << only these are valid for real-time bars
     BID_ASK, HISTORICAL_VOLATILITY, OPTION_IMPLIED_VOLATILITY, YIELD_ASK,
     YIELD_BID, YIELD_BID_ASK, YIELD_LAST
-}
+end WhatToShow
 
-enum BarSize {
+enum BarSize:
   case _1_secs, _5_secs, _10_secs, _15_secs, _30_secs, _1_min, _2_mins,
     _3_mins, _5_mins, _10_mins, _15_mins, _20_mins, _30_mins, _1_hour,
     _4_hours, _1_day, _1_week
-}
+end BarSize
 
-enum DurationUnit {
+enum DurationUnit:
   case SECOND, DAY, WEEK, MONTH, YEAR
-}
 
-enum DeepType {
+enum DeepType:
   case INSERT, UPDATE, DELETE
-}
 
-enum DeepSide {
+enum DeepSide:
   case SELL, BUY
-}
 
-enum NewsType {
-  case UNKNOWN, BBS, LIVE_EXCH, DEAD_EXCH, HTML, POPUP_TEXT, POPUP_HTML
-}
+enum NewsType:
+  case UNKNOWN,BBS, LIVE_EXCH, DEAD_EXCH, HTML, POPUP_TEXT, POPUP_HTML
 
-enum FADataType {
+enum FADataType:
   case UNUSED, GROUPS, PROFILES, ALIASES
-}
 
-enum SecIdType {
-  case None, CUSIP, SEDOL, ISIN, RIC;
+enum SecIdType:
+  case None, CUSIP, SEDOL, ISIN, RIC
 
-}
-
-enum SecType {
+enum SecType:
   case None, STK, OPT, FUT, CASH, BOND, CFD, FOP, WAR, IOPT, FWD, BAG, IND,
-    BILL, FUND, FIXED, SLB, NEWS, CMDTY, BSK, ICU, ICS
+    BILL, FUND, FIXED, SLB, NEWS, CMDTY, BSK, ICU, ICS, CRYPTO
+end SecType
 
-}
+enum MktDataType:
+  case Unknown, Realtime, Frozen, Delayed, DelayedFrozen
 
-enum MktDataType {
-  case Unknown, Realtime, Frozen
-
-}
-
-enum Method {
+final case class DepthMktDataDescription(exchange: String, secType: String, listingExch: String, serviceDataType: String, aggGroup: Int)
+enum Method:
   case None, EqualQuantity, AvailableEquity, NetLiq, PctChange
-}
 
-enum TickType(index: Int, field: String) {
+enum TickType(index: Int, field: String):
   case BID_SIZE extends TickType(0, "bidSize")
   case BID extends TickType(1, "bidPrice")
   case ASK extends TickType(2, "askPrice")
@@ -178,13 +281,13 @@ enum TickType(index: Int, field: String) {
   case AUCTION_PRICE extends TickType(35, "auctionPrice")
   case AUCTION_IMBALANCE extends TickType(36, "auctionImbalance")
   case MARK_PRICE extends TickType(37, "markPrice")
-  case BID_EFP_COMPUTATION extends TickType(38, "bidEFP")
-  case ASK_EFP_COMPUTATION extends TickType(39, "askEFP")
-  case LAST_EFP_COMPUTATION extends TickType(40, "lastEFP")
-  case OPEN_EFP_COMPUTATION extends TickType(41, "openEFP")
-  case HIGH_EFP_COMPUTATION extends TickType(42, "highEFP")
-  case LOW_EFP_COMPUTATION extends TickType(43, "lowEFP")
-  case CLOSE_EFP_COMPUTATION extends TickType(44, "closeEFP")
+  case BID_EFCOMPUTATION extends TickType(38, "bidEFP")
+  case ASK_EFCOMPUTATION extends TickType(39, "askEFP")
+  case LAST_EFCOMPUTATION extends TickType(40, "lastEFP")
+  case OPEN_EFCOMPUTATION extends TickType(41, "openEFP")
+  case HIGH_EFCOMPUTATION extends TickType(42, "highEFP")
+  case LOW_EFCOMPUTATION extends TickType(43, "lowEFP")
+  case CLOSE_EFCOMPUTATION extends TickType(44, "closeEFP")
   case LAST_TIMESTAMP extends TickType(45, "lastTimestamp") // string
   case SHORTABLE extends TickType(46, "shortable")
   case FUNDAMENTAL_RATIOS extends TickType(47, "fundamentals") // string
@@ -201,30 +304,175 @@ enum TickType(index: Int, field: String) {
   case RT_HISTORICAL_VOL extends TickType(58, "RTHistoricalVol")
   case REGULATORY_IMBALANCE extends TickType(61, "regulatoryImbalance")
   case UNKNOWN extends TickType(Integer.MAX_VALUE, "unknown");
-}
+end TickType
 
-enum MarketDataType {
-  case RealTime, Frozen, Unknown
-}
+enum MarketDataType:
+  case REALTIME, FROZEN, DELAYED, DELAYED_FROZEN
 
 final case class CommissionReport(
-          m_execId: String ,
-      m_commission: Double,
-m_currency: String,
- m_realizedPNL: Double,
- m_yield: Double,
-pm_yieldRedemptionDat: Int
-                                 )
-final case class Execution(p_orderId: Int, p_clientId: Int, p_execId: String, p_time: String, p_acctNumber: String, p_exchange: String, p_side: String, p_shares: Int, p_price: Double, p_permId: Int, p_liquidation: Int, p_cumQty: Int, p_avgPrice: Double, p_orderRef: String, p_evRule: String, p_evMultiplier: Double)
-final case class ExecutionFilter(p_clientId: Int, p_acctCode: String, p_time: String, p_symbol: String, p_secType: String, p_exchange: String, p_side: String)
+    execId: String,
+    commission: Double,
+    currency: String,
+    realizedPNL: Double,
+    `yield`: Double,
+    yieldRedemptionDat: Int
+)
+
+final case class Execution(
+    orderId: Int,
+    clientId: Int,
+    execId: String,
+    time: String,
+    acctNumber: String,
+    exchange: String,
+    side: String,
+    shares: Int,
+    price: Double,
+    permId: Int,
+    liquidation: Int,
+    cumQty: Int,
+    avgPrice: Double,
+    orderRef: String,
+    evRule: String,
+    evMultiplier: Double
+)
+
+final case class ExecutionFilter(
+    clientId: Int,
+    acctCode: String,
+    time: String,
+    symbol: String,
+    secType: String,
+    exchange: String,
+    side: String
+)
 
 opaque type ComboContract = Contract
 opaque type FutContract = Contract
 opaque type OptContract = Contract
 opaque type StkContract = Contract
 
+final case class ScannerSubscription(
+    numberOfRows: Int,
+    instrument: String,
+    locationCode: String,
+    scanCode: String,
+    abovePrice: Double,
+    belowPrice: Double,
+    aboveVolume: Int,
+    averageOptionVolumeAbove: Int,
+    marketCapAbove: Double,
+    marketCapBelow: Double,
+    moodyRatingAbove: String,
+    moodyRatingBelow: String,
+    spRatingAbove: String,
+    spRatingBelow: String,
+    maturityDateAbove: String,
+    maturityDateBelow: String,
+    couponRateAbove: Double,
+    couponRateBelow: Double,
+    excludeConvertible: String,
+    scannerSettingPairs: String,
+    stockTypeFilter: String
+)
 
-object Order {
+final case class Order(
+    account: String,
+    settlingFirm: String,
+    clearingAccount: String,
+    clearingIntent: String,
+    action: Action,
+    algoStrategy: AlgoStrategy,
+    algoId: String,
+    allOrNone: Boolean,
+    auxPrice: Double,
+    blockOrder: Boolean,
+    clientId: Int,
+    continuousUpdate: Int,
+    delta: Double,
+    deltaNeutralAuxPrice: Double,
+    deltaNeutralConId: Int,
+    deltaNeutralOpenClose: String,
+    deltaNeutralShortSale: Boolean,
+    deltaNeutralShortSaleSlot: Int,
+    deltaNeutralDesignatedLocation: String,
+    deltaNeutralOrderType: Order.Type,
+    discretionaryAmt: Double,
+    displaySize: Int,
+    eTradeOnly: Boolean,
+    faGroup: String,
+    faMethod: Method,
+    faPercentage: String,
+    faProfile: String,
+    firmQuoteOnly: Boolean,
+    goodAfterTime: String,
+    goodTillDate: String,
+    hedgeParam: String,
+    hedgeType: HedgeType,
+    hidden: Boolean,
+    lmtPrice: Double,
+    minQty: Int,
+    nbboPriceCap: Double,
+    notHeld: Boolean,
+    solicited: Boolean,
+    ocaGroup: String,
+    ocaType: OcaType,
+    optOutSmartRouting: Boolean,
+    orderId: Int,
+    orderRef: String,
+    orderType: Order.Type,
+    outsideRth: Boolean,
+    overridePercentageConstraints: Boolean,
+    openClose: String,
+    origin: Int,
+    shortSaleSlot: Int,
+    designatedLocation: String,
+    exemptCode: Int,
+    parentId: Int,
+    percentOffset: Double,
+    permId: Long,
+    referencePriceType: ReferencePriceType,
+    rule80A: Rule80A,
+    scaleAutoReset: Boolean,
+    scaleInitFillQty: Int,
+    scaleInitLevelSize: Int,
+    scaleInitPosition: Int,
+    scalePriceAdjustInterval: Int,
+    scalePriceAdjustValue: Double,
+    scalePriceIncrement: Double,
+    scaleProfitOffset: Double,
+    scaleRandomPercent: Boolean,
+    scaleSubsLevelSize: Int,
+    startingPrice: Double,
+    stockRangeLower: Double,
+    stockRangeUpper: Double,
+    stockRefPrice: Double,
+    basisPoints: Double,
+    basisPointsType: Int,
+    sweepToFill: Boolean,
+    tif: TimeInForce,
+    totalQuantity: Int,
+    trailingPercent: Double,
+    trailStopPrice: Double,
+    transmit: Boolean,
+    triggerMethod: TriggerMethod,
+    activeStartTime: String,
+    activeStopTime: String,
+    algoParams: List[TagValue],
+    volatility: Double,
+    volatilityType: VolatilityType,
+    whatIf: Boolean,
+    scaleTable: String,
+    auctionStrategy: Int,
+    orderComboLegs: List[Order.ComboLeg],
+    deltaNeutralSettlingFirm: String,
+    deltaNeutralClearingAccount: String,
+    deltaNeutralClearingIntent: String,
+    smartComboRoutingParams: List[TagValue],
+    orderMiscOptions: List[TagValue]
+)
+
+object Order:
   val CUSTOMER = 0
   val FIRM = 1
   val OPT_UNKNOWN = '?'
@@ -239,70 +487,118 @@ object Order {
   val AUCTION_TRANSPARENT = 3
   val EMPTY_STR = ""
 
-  enum Type(val apiString: String) {
-    case None  extends Type("")
-    case MKT  extends Type("MKT")
-    case LMT  extends Type("LMT")
-    case STP  extends Type("STP")
-    case STP_LMT  extends Type("STP LMT")
-    case REL  extends Type("REL")
-    case TRAIL  extends Type("TRAIL")
-    case BOX_TOP  extends Type("BOX TOP")
-    case FIX_PEGGED  extends Type("FIX PEGGED")
-    case LIT  extends Type("LIT")
-    case LMT_PLUS_MKT  extends Type("LMT + MKT")
-    case LOC  extends Type("LOC")
-    case MIT  extends Type("MIT")
-    case MKT_PRT  extends Type("MKT PRT")
-    case MOC  extends Type("MOC")
-    case MTL  extends Type("MTL")
-    case PASSV_REL  extends Type("PASSV REL")
-    case PEG_BENCH  extends Type("PEG BENCH")
-    case PEG_MID  extends Type("PEG MID")
-    case PEG_MKT  extends Type("PEG MKT")
-    case PEG_PRIM  extends Type("PEG PRIM")
-    case PEG_STK  extends Type("PEG STK")
-    case REL_PLUS_LMT  extends Type("REL + LMT")
-    case REL_PLUS_MKT  extends Type("REL + MKT")
-    case STP_PRT  extends Type("STP PRT")
-    case TRAIL_LIMIT  extends Type("TRAIL LIMIT")
-    case TRAIL_LIT  extends Type("TRAIL LIT")
-    case TRAIL_LMT_PLUS_MKT  extends Type("TRAIL LMT + MKT")
-    case TRAIL_MIT  extends Type("TRAIL MIT")
-    case TRAIL_REL_PLUS_MKT  extends Type("TRAIL REL + MKT")
-    case VOL  extends Type("VOL")
-    case VWAP  extends Type("VWAP")
-    case QUOTE  extends Type("QUOTE");
+  enum Type(val apiString: String):
+    case None extends Type("")
+    case MKT extends Type("MKT")
+    case LMT extends Type("LMT")
+    case STP extends Type("STP")
+    case STLMT extends Type("STP LMT")
+    case REL extends Type("REL")
+    case TRAIL extends Type("TRAIL")
+    case BOX_TOP extends Type("BOX TOP")
+    case FIX_PEGGED extends Type("FIX PEGGED")
+    case LIT extends Type("LIT")
+    case LMT_PLUS_MKT extends Type("LMT + MKT")
+    case LOC extends Type("LOC")
+    case MIT extends Type("MIT")
+    case MKT_PRT extends Type("MKT PRT")
+    case MOC extends Type("MOC")
+    case MTL extends Type("MTL")
+    case PASSV_REL extends Type("PASSV REL")
+    case PEG_BENCH extends Type("PEG BENCH")
+    case PEG_MID extends Type("PEG MID")
+    case PEG_MKT extends Type("PEG MKT")
+    case PEG_PRIM extends Type("PEG PRIM")
+    case PEG_STK extends Type("PEG STK")
+    case REL_PLUS_LMT extends Type("REL + LMT")
+    case REL_PLUS_MKT extends Type("REL + MKT")
+    case STPRT extends Type("STP PRT")
+    case TRAIL_LIMIT extends Type("TRAIL LIMIT")
+    case TRAIL_LIT extends Type("TRAIL LIT")
+    case TRAIL_LMT_PLUS_MKT extends Type("TRAIL LMT + MKT")
+    case TRAIL_MIT extends Type("TRAIL MIT")
+    case TRAIL_REL_PLUS_MKT extends Type("TRAIL REL + MKT")
+    case VOL extends Type("VOL")
+    case VWAP extends Type("VWAP")
+    case QUOTE extends Type("QUOTE")
+  end Type
 
-  }
   final case class ComboLeg(price: Double)
 
   final case class State(
-                          status: String,
-                          initMargin: String,
-                          maintMargin: String,
-                          equityWithLoan: String,
-                          commission: Double,
-                          minCommission: Double,
-                          maxCommission: Double,
-                          commissionCurrency: String,
-                          warningText: String
-                        )
+      status: String,
+      initMargin: String,
+      maintMargin: String,
+      equityWithLoan: String,
+      commission: Double,
+      minCommission: Double,
+      maxCommission: Double,
+      commissionCurrency: String,
+      warningText: String
+  )
 
-  enum Status {
-
+  enum Status:
     case ApiPending,
-    ApiCancelled,
-    PreSubmitted,
-    PendingCancel,
-    Cancelled,
-    Submitted,
-    Filled,
-    Inactive,
-    PendingSubmit,
-    Unknown
+      ApiCancelled,
+      PreSubmitted,
+      PendingCancel,
+      Cancelled,
+      Submitted,
+      Filled,
+      Inactive,
+      PendingSubmit,
+      Unknown
+
     def isActive(order: Order.Status): Boolean =
       order == PreSubmitted || order == PendingCancel || order == Submitted || order == PendingSubmit
-  }
+  end Status
 
-}
+end Order
+
+final case class TickAttrib(
+    canAutoExecute: Boolean = false,
+    pastLimit: Boolean = false,
+    preOpen: Boolean = false
+)
+final case class TickAttribBidAsk(
+    bidPastLow: Boolean = false,
+    askPastHigh: Boolean = false
+)
+
+
+final case class TickAttribLast(
+    pastLimit: Boolean = false,
+    unreported: Boolean = false
+)
+
+final case class HistogramEntry(price: Double, size: Decimal)
+
+final case class HistoricalSession(
+    startDateTime: String,
+    endDateTime: String,
+    refDate: String
+)
+
+final case class HistoricalTick(time: Long, price: Double, size: Decimal)
+
+final case class HistoricalTickBidAsk(
+    time: Long,
+    tickAttribBidAsk: TickAttribBidAsk,
+    priceBid: Double,
+    priceAsk: Double,
+    sizeBid: Decimal,
+    sizeAsk: Decimal
+)
+
+final case class HistoricalTickLast(time: Long,tickAttribLast: TickAttribLast , price: Double, size: Decimal,exchange: String, specialConditions: String )
+
+final case class  SoftDollarTier(name: String , value: String, displayName: String )
+
+final case class FamilyCode(accountID : String , familyCodeStr: String )
+
+final case class NewsProvider(providerCode: String, providerName: String)
+
+final case class PriceIncrement(lowEdge: Double, increment: Double)
+
+enum UsePriceMgmtAlgo:
+  case Default, NotUse, Use

@@ -1,4 +1,4 @@
-package org.quasigroup.ibclient
+package org.quasigroup.ibclient.client
 
 import fs2.Chunk
 

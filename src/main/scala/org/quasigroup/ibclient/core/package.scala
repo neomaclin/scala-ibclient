@@ -1,21 +1,23 @@
-package org.quasigroup.ibclient.api
+package org.quasigroup.ibclient.core
 
-import org.quasigroup.ibclient.client.types.Method
+import org.quasigroup.ibclient.client.types.{Contract, Method}
 
-object Profile {
-  enum Type {
+opaque type Decimal = BigDecimal
+//object Decimal:
+
+object Profile:
+  enum Type:
     case NONE, Percents, Ratios, Shares
-  }
 
   final case class Allocation(account: String, amount: String)
 
-}
+end Profile
 
 final case class Profile(
-                          name: String,
-                          ofType: Profile.Type,
-                          allocations: List[Profile.Allocation]
-                        )
+    name: String,
+    ofType: Profile.Type,
+    allocations: List[Profile.Allocation]
+)
 
 final case class TradeId(private val id: String) {
   def full: String = id
@@ -23,19 +25,19 @@ final case class TradeId(private val id: String) {
 }
 
 final case class Bar(
-    time: Long,
+    time: String,
     high: Double,
     low: Double,
     open: Double,
     close: Double,
-    wap: Double,
-    volume: Long,
+    wap: Decimal,
+    volume: Decimal,
     count: Int
 )
 
 final case class Alias(account: String, alias: String)
 
-enum ScanCode {
+enum ScanCode:
   case TOP_PERC_GAIN,
     TOP_PERC_LOSE,
     MOST_ACTIVE,
@@ -140,9 +142,9 @@ enum ScanCode {
     WSH_PREV_ANALYST_MEETING,
     WSH_PREV_EARNINGS,
     WSH_PREV_EVENT
-}
+end ScanCode
 
-enum MarketValueTag {
+enum MarketValueTag:
   case NetLiquidationByCurrency,
     CashBalance,
     TotalCashBalance,
@@ -163,9 +165,10 @@ enum MarketValueTag {
     TBillValue,
     WarrantValue,
     FxCashBalance
-}
 
-enum Instrument {
+end MarketValueTag
+
+enum Instrument:
   case STK,
     BOND,
     EFP,
@@ -184,9 +187,9 @@ enum Instrument {
     STOCK_NA,
     WAR_EU
 // override def toString: String = super.toString.replace('_', '.')
-}
+end Instrument
 
-enum AccountSummaryTag {
+enum AccountSummaryTag:
   case AccountType, // balances
     NetLiquidation,
     TotalCashValue, // Total cash including futures pnl
@@ -224,16 +227,17 @@ enum AccountSummaryTag {
     HighestSeverity, // A measure of how close the account is to liquidation
     DayTradesRemaining, // The Number of Open/Close trades one could do before Pattern Day Trading is detected; a value of "-1" means user can do unlimited day trades.
     Leverage // GrossPositionValue / NetLiquidation
-}
+end AccountSummaryTag
+
 final case class Group(
     name: String,
     defaultMethod: Method,
     account: List[String]
 )
 final case class Position(
-    contract: Nothing,
-    account: Nothing,
-    position: Int,
+    contract: Contract,
+    account: String,
+    position: Decimal,
     marketPrice: Double,
     marketValue: Double,
     averageCost: Double,
