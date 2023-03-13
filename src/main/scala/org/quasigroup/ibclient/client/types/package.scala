@@ -2,15 +2,21 @@ package org.quasigroup.ibclient.client.types
 
 import cats.data.State
 
-opaque type BitMask = State[Int, Boolean]
+final case class BitMask(mask: Int) {
+  def clear: BitMask = BitMask(0)
 
-opaque type Decimal = BigDecimal
-//object BitMask
-//final case class BitMask(mask: Int){
-//  def clear: BitMask = BitMask(0)
-//  def get(index: Int): Boolean = (mask & (1 << index)) != 0
-//  def set(index: Int, element: Boolean): (BitMask, Boolean)
-//}
+  def get(index: Int): Boolean = (mast & (1 << index)) != 0
+
+  def set(index: Int, element: Boolean): (BitMask, Boolean) =
+      (if element then BitMask(mask | (1 << index)) else BitMask(mask &~(1 << index)),  get(index))
+
+
+}
+
+type Decimal = BigDecimal
+
+object Decimal:
+  def apply(value: BigDecimal): Decimal = value
 final case class TagValue(tag: String, value: String)
 
 final case class ComboLeg(
