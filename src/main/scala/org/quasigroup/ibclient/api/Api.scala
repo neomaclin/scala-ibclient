@@ -8,8 +8,10 @@ import fs2.Stream
 
 trait Api[F[_]]:
 
-  def connect(): F[ConnectionAck]
-  def disConnect(): F[ConnectionClosed]
+  def connect(): F[ConnectionAck.type]
+  
+  def disConnect(): F[ConnectionClosed.type]
+
   def startAPI(): F[Unit]
 
   def reqScannerParameters(): F[ScannerParameters]

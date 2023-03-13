@@ -5,10 +5,10 @@ import cats.data.State
 final case class BitMask(mask: Int) {
   def clear: BitMask = BitMask(0)
 
-  def get(index: Int): Boolean = (mast & (1 << index)) != 0
+  def get(index: Int): Boolean = (mask & (1 << index)) != 0
 
   def set(index: Int, element: Boolean): (BitMask, Boolean) =
-      (if element then BitMask(mask | (1 << index)) else BitMask(mask &~(1 << index)),  get(index))
+      (if element then BitMask(mask | (1 << index)) else BitMask(mask & ~(1 << index)),  get(index))
 
 
 }
