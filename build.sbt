@@ -37,6 +37,7 @@ lazy val root = (project in file(".")).settings(
       "org.scala-lang.modules" %% "scala-parser-combinators"% "2.2.0",
       "org.typelevel" %% "shapeless3-deriving" % "3.3.0",
       "com.disneystreaming" %% "weaver-cats" % WeaverVersion % Test,
+      "com.disneystreaming" %% "weaver-scalacheck" % WeaverVersion % Test
     ),
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
   )

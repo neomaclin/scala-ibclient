@@ -8,8 +8,11 @@ final case class BitMask(mask: Int) {
   def get(index: Int): Boolean = (mask & (1 << index)) != 0
 
   def set(index: Int, element: Boolean): (BitMask, Boolean) =
-      (if element then BitMask(mask | (1 << index)) else BitMask(mask & ~(1 << index)),  get(index))
-
+    (
+      if element then BitMask(mask | (1 << index))
+      else BitMask(mask & ~(1 << index)),
+      get(index)
+    )
 
 }
 
@@ -67,7 +70,10 @@ final case class ContractDetails(
     evRule: String,
     evMultiplier: Double
 )
-final case class ContractDescription(contract: Contract, derivativeSecTypes: List[String])
+final case class ContractDescription(
+    contract: Contract,
+    derivativeSecTypes: List[String]
+)
 final case class DeltaNeutralContract(conid: Int, delta: Double, price: Double)
 
 object ComboLeg:
@@ -228,7 +234,7 @@ enum DeepSide:
   case SELL, BUY
 
 enum NewsType:
-  case UNKNOWN,BBS, LIVE_EXCH, DEAD_EXCH, HTML, POPUP_TEXT, POPUP_HTML
+  case UNKNOWN, BBS, LIVE_EXCH, DEAD_EXCH, HTML, POPUP_TEXT, POPUP_HTML
 
 enum FADataType:
   case UNUSED, GROUPS, PROFILES, ALIASES
@@ -244,7 +250,13 @@ end SecType
 enum MktDataType:
   case Unknown, Realtime, Frozen, Delayed, DelayedFrozen
 
-final case class DepthMktDataDescription(exchange: String, secType: String, listingExch: String, serviceDataType: String, aggGroup: Int)
+final case class DepthMktDataDescription(
+    exchange: String,
+    secType: String,
+    listingExch: String,
+    serviceDataType: String,
+    aggGroup: Int
+)
 enum Method:
   case None, EqualQuantity, AvailableEquity, NetLiq, PctChange
 
@@ -309,7 +321,50 @@ enum TickType(index: Int, field: String):
   case LAST_RTH_TRADE extends TickType(57, "lastRTHTrade")
   case RT_HISTORICAL_VOL extends TickType(58, "RTHistoricalVol")
   case REGULATORY_IMBALANCE extends TickType(61, "regulatoryImbalance")
-  case UNKNOWN extends TickType(Integer.MAX_VALUE, "unknown");
+  case NEWS_TICK extends TickType(62, "newsTick")
+  case SHORT_TERM_VOLUME_3_MIN extends TickType(63, "shortTermVolume3Min")
+  case SHORT_TERM_VOLUME_5_MIN extends TickType(64, "shortTermVolume5Min")
+  case SHORT_TERM_VOLUME_10_MIN extends TickType(65, "shortTermVolume10Min")
+  case DELAYED_BID extends TickType(66, "delayedBid")
+  case DELAYED_ASK extends TickType(67, "delayedAsk")
+  case DELAYED_LAST extends TickType(68, "delayedLast")
+  case DELAYED_BID_SIZE extends TickType(69, "delayedBidSize")
+  case DELAYED_ASK_SIZE extends TickType(70, "delayedAskSize")
+  case DELAYED_LAST_SIZE extends TickType(71, "delayedLastSize")
+  case DELAYED_HIGH extends TickType(72, "delayedHigh")
+  case DELAYED_LOW extends TickType(73, "delayedLow")
+  case DELAYED_VOLUME extends TickType(74, "delayedVolume")
+  case DELAYED_CLOSE extends TickType(75, "delayedClose")
+  case DELAYED_OPEN extends TickType(76, "delayedOpen")
+  case RT_TRD_VOLUME extends TickType(77, "rtTrdVolume")
+  case CREDITMAN_MARK_PRICE extends TickType(78, "creditmanMarkPrice")
+  case CREDITMAN_SLOW_MARK_PRICE extends TickType(79, "creditmanSlowMarkPrice")
+  case DELAYED_BID_OPTION extends TickType(80, "delayedBidOptComp")
+  case DELAYED_ASK_OPTION extends TickType(81, "delayedAskOptComp")
+  case DELAYED_LAST_OPTION extends TickType(82, "delayedLastOptComp")
+  case DELAYED_MODEL_OPTION extends TickType(83, "delayedModelOptComp")
+  case LAST_EXCH extends TickType(84, "lastExchange")
+  case LAST_REG_TIME extends TickType(85, "lastRegTime")
+  case FUTURES_OPEN_INTEREST extends TickType(86, "futuresOpenInterest")
+  case AVG_OPT_VOLUME extends TickType(87, "avgOptVolume")
+  case DELAYED_LAST_TIMESTAMP extends TickType(88, "delayedLastTimestamp")
+  case SHORTABLE_SHARES extends TickType(89, "shortableShares")
+  case DELAYED_HALTED extends TickType(90, "delayedHalted")
+  case REUTERS_2_MUTUAL_FUNDS extends TickType(91, "reuters2MutualFunds")
+  case ETF_NAV_CLOSE extends TickType(92, "etfNavClose")
+  case ETF_NAV_PRIOR_CLOSE extends TickType(93, "etfNavPriorClose")
+  case ETF_NAV_BID extends TickType(94, "etfNavBid")
+  case ETF_NAV_ASK extends TickType(95, "etfNavAsk")
+  case ETF_NAV_LAST extends TickType(96, "etfNavLast")
+  case ETF_FROZEN_NAV_LAST extends TickType(97, "etfFrozenNavLast")
+  case ETF_NAV_HIGH extends TickType(98, "etfNavHigh")
+  case ETF_NAV_LOW extends TickType(99, "etfNavLow")
+  case SOCIAL_MARKET_ANALYTICS extends TickType(100, "socialMarketAnalytics")
+  case ESTIMATED_IPO_MIDPOINT extends TickType(101, "estimatedIPOMidpoint")
+  case FINAL_IPO_LAST extends TickType(102, "finalIPOLast")
+
+  case UNKNOWN extends TickType(Integer.MAX_VALUE, "unknown")
+
 end TickType
 
 enum MarketDataType:
@@ -324,6 +379,9 @@ final case class CommissionReport(
     yieldRedemptionDat: Int
 )
 
+enum Liquidities:
+  case None, Added, Removed, RoudedOut
+
 final case class Execution(
     orderId: Int,
     clientId: Int,
@@ -335,7 +393,7 @@ final case class Execution(
     shares: Int,
     price: Double,
     permId: Int,
-    liquidation: Int,
+    liquidation: Liquidities,
     cumQty: Int,
     avgPrice: Double,
     orderRef: String,
@@ -571,7 +629,6 @@ final case class TickAttribBidAsk(
     askPastHigh: Boolean = false
 )
 
-
 final case class TickAttribLast(
     pastLimit: Boolean = false,
     unreported: Boolean = false
@@ -596,11 +653,22 @@ final case class HistoricalTickBidAsk(
     sizeAsk: Decimal
 )
 
-final case class HistoricalTickLast(time: Long,tickAttribLast: TickAttribLast , price: Double, size: Decimal,exchange: String, specialConditions: String )
+final case class HistoricalTickLast(
+    time: Long,
+    tickAttribLast: TickAttribLast,
+    price: Double,
+    size: Decimal,
+    exchange: String,
+    specialConditions: String
+)
 
-final case class  SoftDollarTier(name: String , value: String, displayName: String )
+final case class SoftDollarTier(
+    name: String,
+    value: String,
+    displayName: String
+)
 
-final case class FamilyCode(accountID : String , familyCodeStr: String )
+final case class FamilyCode(accountID: String, familyCodeStr: String)
 
 final case class NewsProvider(providerCode: String, providerName: String)
 
@@ -608,3 +676,5 @@ final case class PriceIncrement(lowEdge: Double, increment: Double)
 
 enum UsePriceMgmtAlgo:
   case Default, NotUse, Use
+
+final case class ConnectionAck(serverVersion: Int, time: String)

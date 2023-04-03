@@ -220,9 +220,9 @@ enum ResponseMsg:
       advancedOrderRejectJson: String
   ) extends ResponseMsg
 
-  case ConnectionClosed extends ResponseMsg
+  // case ConnectionClosed extends ResponseMsg
 
-  case ConnectionAck extends ResponseMsg
+  // extends ResponseMsg
 
   case PositionMulti(
       reqId: Int,

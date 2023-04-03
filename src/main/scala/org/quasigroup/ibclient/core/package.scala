@@ -244,3 +244,26 @@ final case class Position(
     unrealPnl: Double,
     realPnl: Double
 )
+
+enum OrderConditionType(private val value: Int):
+  case Price extends OrderConditionType(1)
+  case Time extends OrderConditionType(3)
+  case Margin extends OrderConditionType(4)
+  case Execution extends OrderConditionType(5)
+  case Volume extends OrderConditionType(6)
+  case PercentChange extends OrderConditionType(7)
+
+final case class OrderCondition(
+    conditionType: OrderConditionType,
+    isConjunctionConnection: Boolean
+)
+
+final case class WshEventData(
+    filter: String,
+    fillWatchlist: Boolean,
+    fillPortfolio: Boolean,
+    fillCompetitors: Boolean,
+    startDate: String,
+    endDate: String,
+    totalLimit: Int
+)

@@ -8,9 +8,9 @@ import fs2.Stream
 
 trait Api[F[_]]:
 
-  def connect(): F[ConnectionAck.type]
+  def connect(): F[ConnectionAck]
   
-  def disConnect(): F[ConnectionClosed.type]
+  def disConnect(): F[Unit]
 
   def startAPI(): F[Unit]
 
