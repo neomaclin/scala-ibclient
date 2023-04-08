@@ -9,7 +9,7 @@ import fs2.Stream
 trait Api[F[_]]:
 
   def connect(): F[ConnectionAck]
-  
+
   def disConnect(): F[Unit]
 
   def startAPI(): F[Unit]
@@ -20,7 +20,7 @@ trait Api[F[_]]:
       tickerId: Int,
       subscription: ScannerSubscription,
       scannerSubscriptionOptions: List[TagValue]
-  ): Stream[F,ScannerData]
+  ): Stream[F, ScannerData]
 
   def cancelScannerSubscription(tickerId: Int): F[ScannerDataEnd]
 
@@ -59,7 +59,10 @@ trait Api[F[_]]:
 
   def cancelRealTimeBars(tickerId: Int): F[Unit]
 
-  def reqContractDetails(reqId: Int, contract: Contract): Stream[F,ResponseMsg.ContractDetails]
+  def reqContractDetails(
+      reqId: Int,
+      contract: Contract
+  ): Stream[F, ResponseMsg.ContractDetails]
 
   def reqMktDepth(
       tickerId: Int,

@@ -1,23 +1,41 @@
 package org.quasigroup.ibclient
 
+import cats.effect.kernel.Resource
+import cats.effect.{Clock, IO, SyncIO}
+import org.quasigroup.ibclient.IBSocketClientCatsSuite.expect
 import org.quasigroup.ibclient.client.IBClient
 import org.quasigroup.ibclient.client.impl.IBSocketClientCats
-
-import cats.effect.{IO, SyncIO}
-import cats.effect.kernel.Resource
-
-import weaver.IOSuite
-import weaver.scalacheck._
 import org.scalacheck.Gen
+import weaver.IOSuite
+import weaver.scalacheck.*
 
 object IBSocketClientCatsSuite extends IOSuite with Checkers {
 
+  override def maxParallelism: Int = 1
+
   override type Res = IBClient[IO]
 
-  override def sharedResource: Resource[IO, Res] = IBSocketClientCats.make[IO]()
+  override def sharedResource: Resource[IO, Res] =
+   for {
+     ibclient <- IBSocketClientCats.make[IO]().evalTap(_.eConnect(10))
+     _ <- Resource.onFinalize(ibclient.eDisconnect(true))
+   } yield ibclient
 
-  test("ibclient can connect and receive connection ack with server version and timestamp") { ibclient =>
-    ibclient.eConnect(10).map(ack => expect(ack.serverVersion == IBClient.MAX_VERSION))
+  test("ibclient can request for current time") { ibclient =>
+    for {
+      now <- IO.realTimeInstant
+      serverTime <- ibclient.reqCurrentTime()
+    } yield {
+      expect(serverTime.time <= now.getEpochSecond)
+    }
   }
-  
+
+  test("ibclient can request family codes") { ibclient =>
+    for {
+      familycodes <- ibclient.reqFamilyCodes()
+    } yield {
+      expect(familycodes.familyCodes.isEmpty)
+    }
+  }
+
 }

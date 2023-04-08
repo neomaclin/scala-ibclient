@@ -1,6 +1,7 @@
 package org.quasigroup.ibclient.client.types
 
 import cats.data.State
+import scala.math.BigDecimal
 
 final case class BitMask(mask: Int) {
   def clear: BitMask = BitMask(0)
@@ -16,10 +17,6 @@ final case class BitMask(mask: Int) {
 
 }
 
-type Decimal = BigDecimal
-
-object Decimal:
-  def apply(value: BigDecimal): Decimal = value
 final case class TagValue(tag: String, value: String)
 
 final case class ComboLeg(
@@ -166,7 +163,7 @@ end AlgoStrategy
 enum HedgeType:
   case None, Delta, Beta, Fx, Pair
 
-enum Right:
+enum ContractRight:
   case None, Put, Call
 
 enum VolatilityType:

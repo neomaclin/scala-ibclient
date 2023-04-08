@@ -10,7 +10,10 @@ import scala.deriving.Mirror
 
 object Encoder {
 
-  def encode[A: Encoder](a: A): mutable.Buffer[Byte] = summon[Encoder[A]](a)
+  def encode[T: Encoder](raw: T): Array[Byte] = {
+    val encoded = summon[Encoder[T]](raw)
+    (LengthEncoder(Length(encoded.length)) ++ encoded).toArray
+  }
 
   opaque type Length = Int
   object Length:
@@ -24,9 +27,9 @@ object Encoder {
       (0xff & length).toByte
     ).toBuffer
 
-  given StringEncoder: Encoder[String] = _.getBytes.toBuffer
+  given StringEncoder: Encoder[String] = _.getBytes.toBuffer.+=(0)
 
-  given IntEncoder: Encoder[Int] = StringEncoder.contramap(_.toString)
+  given IntEncoder: Encoder[Int] = StringEncoder.contramap(String.valueOf)
 
   given BytesEncoder: Encoder[Array[Byte]] = _.toBuffer
 
@@ -34,9 +37,6 @@ object Encoder {
     IntEncoder.contramap(if _ then 1 else 0)
 
   given DoubleEncoder: Encoder[Double] = StringEncoder.contramap(_.toString)
-
-  given encodeList[T](using e: Encoder[T]): Encoder[List[T]] =
-    _.foldLeft(Buffer.empty)(_ ++ e(_))
 
   import scala.compiletime.{erasedValue, summonInline}
 

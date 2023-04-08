@@ -1,9 +1,6 @@
 package org.quasigroup.ibclient.core
 
-import org.quasigroup.ibclient.client.types.{Contract, Method}
-
-opaque type Decimal = BigDecimal
-//object Decimal:
+import org.quasigroup.ibclient.client.types.{Contract, Method, Decimal}
 
 object Profile:
   enum Type:

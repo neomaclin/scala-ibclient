@@ -1,9 +1,89 @@
 package org.quasigroup.ibclient.client.decoder
 
+import org.quasigroup.ibclient.client.response.{MsgReader, ResponseMsg}
+import org.quasigroup.ibclient.client.types.Decimal
+
+import scala.compiletime.summonFrom
+import scala.deriving.Mirror
+import scala.util.Try
+
 object Decoder {
-  def decode[A:Decoder](entry: Array[String]): Either[Throwable,A] = summon[Decoder[A]](entry)
+
+  def decodeMsg(value: String): Either[Throwable, ResponseMsg] = decodeMsg(
+    value.split(0.toChar)
+  )
+
+  def decodeMsg(entry: Array[String]): Either[Throwable, ResponseMsg] =
+    entry match
+      case Array(msgId, rest: _*) =>
+        MsgReader.read(msgId.toInt, rest.toArray)
+      case _ => Left(new Exception("msg format error"))
+
+  def decode[A: Decoder](entry: Array[String]): Either[Throwable, A] =
+    summon[Decoder[A]](entry)
+
+  given StringDecoder: Decoder[String] = (entry: Array[String]) =>
+    entry.headOption.toRight(new Exception("nothing to decode"))
+
+  given LongDecoder: Decoder[Long] = StringDecoder.flatMap(value =>
+    if value.isEmpty then Right(Long.MaxValue) else Try(value.toLong).toEither
+  )
+
+  given IntDecoder: Decoder[Int] = StringDecoder.flatMap(value =>
+    if value.isEmpty then Right(Int.MaxValue) else Try(value.toInt).toEither
+  )
+
+  given BooleanDecoder: Decoder[Boolean] = IntDecoder.map(_ != 0)
+
+  given DoubleDecoder: Decoder[Double] = StringDecoder.flatMap(value =>
+    if value.isEmpty then Right(Double.MaxValue)
+    else Try(value.toDouble).toEither
+  )
+
+  given DecimalDecoder: Decoder[Decimal] = StringDecoder.flatMap(value =>
+    if value.isEmpty || value == String.valueOf(
+        Long.MaxValue
+      ) || value == String.valueOf(Int.MaxValue) || value == String.valueOf(
+        Double.MaxValue
+      )
+    then Right(Decimal.INVALID)
+    else Decimal.parse(value)
+  )
+
+  import scala.compiletime.{erasedValue, summonInline}
+  import scala.deriving.*
+  inline def summonAll[T <: Tuple]: List[Decoder[_]] =
+    inline erasedValue[T] match
+      case _: EmptyTuple => Nil
+      case _: (t *: ts)  => summonInline[Decoder[t]] :: summonAll[ts]
+
+  inline given decodeProduct[T](using mirror: Mirror.ProductOf[T]): Decoder[T] =
+    new Decoder[T] {
+      final def apply(entry: Array[String]): Either[Throwable, T] =
+        entry.iterator
+          .zip(summonAll[mirror.MirroredElemTypes].iterator)
+          .map((s: String, e) => e.asInstanceOf[Decoder[Any]](s))
+          .foldRight(Right(EmptyTuple): Either[Throwable, Tuple]) {
+            case (Left(itemError), Left(accError)) => Left(itemError)
+            case (Left(itemError), Right(product)) => Left(itemError)
+            case (Right(item), Right(product))     => Right(item *: product)
+            case (Right(item), Left(accError))     => Left(accError)
+          }
+          .map(mirror.fromProduct)
+
+      override final def apply(value: String): Either[Throwable, T] = apply(
+        value.split(0.toChar)
+      )
+    }
+
 }
 
-trait Decoder[A]{
+trait Decoder[A] { self =>
   def apply(entry: Array[String]): Either[Throwable, A]
+  def apply(value: String): Either[Throwable, A] = apply(value.split(0.toChar))
+
+  final def map[B](f: A => B): Decoder[B] = (entry: Array[String]) =>
+    self.apply(entry).map(f)
+  final def flatMap[B](f: A => Either[Throwable, B]): Decoder[B] =
+    (entry: Array[String]) => self.apply(entry).flatMap(f)
 }
