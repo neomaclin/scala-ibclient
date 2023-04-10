@@ -9,10 +9,6 @@ import scala.util.Try
 
 object Decoder {
 
-  def decodeMsg(value: String): Either[Throwable, ResponseMsg] = decodeMsg(
-    value.split(0.toChar)
-  )
-
   def decodeMsg(entry: Array[String]): Either[Throwable, ResponseMsg] =
     entry match
       case Array(msgId, rest: _*) =>
@@ -62,7 +58,7 @@ object Decoder {
       final def apply(entry: Array[String]): Either[Throwable, T] =
         entry.iterator
           .zip(summonAll[mirror.MirroredElemTypes].iterator)
-          .map((s: String, e) => e.asInstanceOf[Decoder[Any]](s))
+          .map((s: String, e) => e.asInstanceOf[Decoder[Any]](Array(s)))
           .foldRight(Right(EmptyTuple): Either[Throwable, Tuple]) {
             case (Left(itemError), Left(accError)) => Left(itemError)
             case (Left(itemError), Right(product)) => Left(itemError)
@@ -71,16 +67,12 @@ object Decoder {
           }
           .map(mirror.fromProduct)
 
-      override final def apply(value: String): Either[Throwable, T] = apply(
-        value.split(0.toChar)
-      )
     }
 
 }
 
 trait Decoder[A] { self =>
   def apply(entry: Array[String]): Either[Throwable, A]
-  def apply(value: String): Either[Throwable, A] = apply(value.split(0.toChar))
 
   final def map[B](f: A => B): Decoder[B] = (entry: Array[String]) =>
     self.apply(entry).map(f)

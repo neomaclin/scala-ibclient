@@ -15,11 +15,7 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers {
 
   override type Res = IBClient[IO]
 
-  override def sharedResource: Resource[IO, Res] =
-   for {
-     ibclient <- IBSocketClientCats.make[IO]().evalTap(_.eConnect(10))
-     _ <- Resource.onFinalize(ibclient.eDisconnect(true))
-   } yield ibclient
+  override def sharedResource: Resource[IO, Res] = IBSocketClientCats.make[IO]()
 
   test("ibclient can request for current time") { ibclient =>
     for {

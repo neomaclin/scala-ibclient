@@ -18,7 +18,7 @@ trait IBClient[F[_]] {
 
   def reqFamilyCodes(): F[FamilyCodes]
 
-  def eDisconnect(resetState: Boolean): F[Unit]
+  def eDisconnect(): F[Unit]
 
 }
 

@@ -34,33 +34,36 @@ class IBSocketClientCats[F[_]: Async: Console](
   import IBSocketClientCats.{*, given}
 
   private val msgQueueDeferred = Deferred.unsafe[F, Queue[F, ResponseMsg]]
+  private val msgPullingFiberDeferred =
+    Deferred.unsafe[F, Fiber[F, Throwable, Unit]]
   private val _clientId = Deferred.unsafe[F, Int]
   private val _serverVersion = Deferred.unsafe[F, Int]
 
   private def startMsgConsumption: F[Unit] = {
     for {
       msgQueue <- Queue.unbounded[F, ResponseMsg]
-      _ <- socket.reads
+      pullFiber <- socket.reads
         .through(ibFramesString.toPipeByte)
-        .evalTap(Console[F].println)
+        .evalTap(strs => Console[F].println(strs.mkString("[", ",", "]")))
         .evalMap(Decoder.decodeMsg(_).liftTo[F])
+        .evalTap(Console[F].println)
         .takeWhile(_ != ConnectionClosed)
         .evalTap(msgQueue.offer)
         .compile
         .drain
         .start
       _ <- msgQueueDeferred.complete(msgQueue)
+      _ <- msgPullingFiberDeferred.complete(pullFiber)
     } yield ()
   }
 
-  private val ibFramesString: StreamDecoder[String] =
+  private val ibFramesString: StreamDecoder[Array[String]] =
     StreamDecoder
       .many(int32)
       .flatMap(msgSize =>
         if msgSize <= MAX_MSG_LENGTH then
           StreamDecoder.once(
-            bytes(msgSize)
-              .xmap(_.decodeUtf8Lenient, str => ByteVector(str.getBytes))
+            bytes(msgSize).map(_.decodeUtf8Lenient.split(0.toChar))
           )
         else
           StreamDecoder.raiseError(
@@ -80,7 +83,9 @@ class IBSocketClientCats[F[_]: Async: Console](
           if msgSize <= MAX_MSG_LENGTH then socket.read(msgSize)
           else
             Async[F].raiseError(
-              new InvalidMessageLengthException("message size is too large")
+              new InvalidMessageLengthException(
+                "message size is too large: " + msgSize
+              )
             )
         )
       result <- resultRaw
@@ -117,7 +122,11 @@ class IBSocketClientCats[F[_]: Async: Console](
       _ <- startAPI
     } yield resp
 
-  override def eDisconnect(resetState: Boolean): F[Unit] = Applicative[F].unit
+  override def eDisconnect(): F[Unit] =
+    for {
+      _ <- msgPullingFiberDeferred.get.flatMap(_.cancel)
+      _ <- Console[F].println("Msg pull stopped")
+    } yield ()
 
   private def startAPI: F[Unit] = {
     for {
@@ -130,6 +139,7 @@ class IBSocketClientCats[F[_]: Async: Console](
           )
         )
       )
+      _ <- Console[F].println("Start msg pulling")
       _ <- startMsgConsumption
     } yield ()
 
@@ -151,18 +161,20 @@ object IBSocketClientCats {
       }
     }
 
-    override def apply(value: String): Either[Throwable, ConnectionAck] = apply(
-      Array(value)
-    )
   end given
 
   val MAX_MSG_LENGTH: Int = 0xffffff
   def make[F[_]: Async: Console](
       host: Host = host"127.0.0.1",
       port: Port = port"7496",
-      optionalCapabilities: Option[String] = None
+      optionalCapabilities: Option[String] = None,
+      clientId: Int = 10
   ): Resource[F, IBClient[F]] =
-    Network[F]
-      .client(SocketAddress(host, port))
-      .map(new IBSocketClientCats[F](_, optionalCapabilities))
+    for
+      client <- Network[F]
+        .client(SocketAddress(host, port))
+        .map(new IBSocketClientCats[F](_, optionalCapabilities))
+        .evalTap(_.eConnect(clientId))
+      _ <- Resource.onFinalize(client.eDisconnect())
+    yield client
 }
