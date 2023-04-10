@@ -33,7 +33,7 @@ class IBSocketClientCats[F[_]: Async: Console](
 
   import IBSocketClientCats.{*, given}
 
-  private val msgQueueDeferred = Deferred.unsafe[F, Queue[F, ResponseMsg]]
+  private val msgTopicDeferred = Deferred.unsafe[F, Topic[F, ResponseMsg]]
   private val msgPullingFiberDeferred =
     Deferred.unsafe[F, Fiber[F, Throwable, Unit]]
   private val _clientId = Deferred.unsafe[F, Int]
@@ -42,18 +42,24 @@ class IBSocketClientCats[F[_]: Async: Console](
   private def startMsgConsumption: F[Unit] = {
     for {
       msgQueue <- Queue.unbounded[F, ResponseMsg]
-      pullFiber <- socket.reads
-        .through(ibFramesString.toPipeByte)
-        .evalTap(strs => Console[F].println(strs.mkString("[", ",", "]")))
-        .evalMap(Decoder.decodeMsg(_).liftTo[F])
-        .evalTap(Console[F].println)
-        .takeWhile(_ != ConnectionClosed)
-        .evalTap(msgQueue.offer)
+      msgTopic <- Topic[F, ResponseMsg]
+      pullFiber <- Stream
+        .fromQueueUnterminated(msgQueue)
+        .concurrently(
+          socket.reads
+            .through(ibFramesString.toPipeByte)
+            .evalTap(strs => Console[F].println(strs.mkString("[", ",", "]")))
+            .evalMap(Decoder.decodeMsg(_).liftTo[F])
+            .evalTap(Console[F].println)
+            .takeWhile(_ != ConnectionClosed)
+            .evalTap(msgQueue.offer)
+        )
+        .through(msgTopic.publish)
         .compile
         .drain
         .start
-      _ <- msgQueueDeferred.complete(msgQueue)
       _ <- msgPullingFiberDeferred.complete(pullFiber)
+      _ <- msgTopicDeferred.complete(msgTopic)
     } yield ()
   }
 
@@ -99,16 +105,14 @@ class IBSocketClientCats[F[_]: Async: Console](
       request: Req
   ): F[Resp] = for {
     _ <- socket.write(Chunk.array(encode[Req](request)))
-    msgQueue <- msgQueueDeferred.get
-    resp <- Stream
-      .fromQueueUnterminated(msgQueue)
+    msgStream <- msgTopicDeferred.get
+    resp <- msgStream.subscribeUnbounded
       .collectFirst { case item: Resp => item }
+      .evalTap( item => Console[F].println(s"fetched msg:$item") )
       .compile
       .lastOrError
   } yield resp
 
-  override def reqCurrentTime(): F[CurrentTime] =
-    fetchSingleResponse[ReqCurrentTime, CurrentTime](ReqCurrentTime())
   override def eConnect(clientId: Int): F[ConnectionAck] =
     for {
       rawResponse <- requestBeforeAPIStart(
@@ -147,6 +151,10 @@ class IBSocketClientCats[F[_]: Async: Console](
 
   override def reqFamilyCodes(): F[FamilyCodes] =
     fetchSingleResponse[ReqFamilyCodes, FamilyCodes](ReqFamilyCodes())
+
+  override def reqCurrentTime(): F[CurrentTime] =
+    fetchSingleResponse[ReqCurrentTime, CurrentTime](ReqCurrentTime())
+
 }
 
 object IBSocketClientCats {

@@ -11,8 +11,6 @@ import weaver.scalacheck.*
 
 object IBSocketClientCatsSuite extends IOSuite with Checkers {
 
-  override def maxParallelism: Int = 1
-
   override type Res = IBClient[IO]
 
   override def sharedResource: Resource[IO, Res] = IBSocketClientCats.make[IO]()
