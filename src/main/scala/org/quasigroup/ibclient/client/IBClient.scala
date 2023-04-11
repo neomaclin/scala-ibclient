@@ -14,11 +14,23 @@ trait IBClient[F[_]] {
 
   def eConnect(clientId: Int): F[ConnectionAck]
 
+  def eDisconnect(): F[Unit]
+
   def reqCurrentTime(): F[CurrentTime]
 
   def reqFamilyCodes(): F[FamilyCodes]
 
-  def eDisconnect(): F[Unit]
+  def reqScannerParameters(): F[ScannerParameters]
+
+  // def reqOpenOrders(): F[]
+
+  // def reqNewsBulletins(allMsgs: Boolean): F[UpdateNewsBulletin]
+
+  def setServerLogLevel(level: Int): F[Unit]
+
+  def reqManagedAccts(): F[ManagedAccounts]
+
+  def requestFA(faDataType: Int): F[ReceiveFA]
 
 }
 

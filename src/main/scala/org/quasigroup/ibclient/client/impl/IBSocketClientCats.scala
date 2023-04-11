@@ -79,9 +79,32 @@ class IBSocketClientCats[F[_]: Async: Console](
           )
       )
 
-  private def requestBeforeAPIStart(chunks: Array[Byte]): F[Array[String]] =
+  private def fetchSingleResponse[Req: Encoder, Resp <: ResponseMsg: ClassTag](
+      request: Req
+  ): F[Resp] = for {
+    requestEncoded <- encode[Req](request).pure
+    _ <- socket.write(Chunk.array(requestEncoded))
+    msgStream <- msgTopicDeferred.get
+    resp <- msgStream.subscribeUnbounded
+      .collectFirst { case item: Resp => item }
+      .evalTap(item => Console[F].println(s"fetched msg:$item"))
+      .compile
+      .lastOrError
+  } yield resp
+
+  private def fireAndForget[Req: Encoder](
+      request: Req
+  ): F[Unit] = for {
+    requestEncoded <- encode[Req](request).pure
+    _ <- socket.write(Chunk.array(requestEncoded))
+  } yield ()
+
+  override def eConnect(clientId: Int): F[ConnectionAck] =
     for {
-      _ <- socket.write(Chunk.array(chunks))
+      encoded <- ("API\u0000".getBytes ++ encode[String](
+        buildVersionString(MIN_VERSION, MAX_VERSION)
+      )).pure
+      _ <- socket.write(Chunk.array(encoded))
       sizeRaw <- socket.read(4)
       resultRaw <- sizeRaw
         .map(_.toByteVector.toInt())
@@ -99,28 +122,7 @@ class IBSocketClientCats[F[_]: Async: Console](
         .liftTo[F](
           new InvalidMessageLengthException("message empty")
         )
-    } yield result
-
-  private def fetchSingleResponse[Req: Encoder, Resp <: ResponseMsg: ClassTag](
-      request: Req
-  ): F[Resp] = for {
-    _ <- socket.write(Chunk.array(encode[Req](request)))
-    msgStream <- msgTopicDeferred.get
-    resp <- msgStream.subscribeUnbounded
-      .collectFirst { case item: Resp => item }
-      .evalTap( item => Console[F].println(s"fetched msg:$item") )
-      .compile
-      .lastOrError
-  } yield resp
-
-  override def eConnect(clientId: Int): F[ConnectionAck] =
-    for {
-      rawResponse <- requestBeforeAPIStart(
-        "API\u0000".getBytes ++ encode[String](
-          buildVersionString(MIN_VERSION, MAX_VERSION)
-        )
-      )
-      resp <- Decoder.decode[ConnectionAck](rawResponse).liftTo[F]
+      resp <- Decoder.decode[ConnectionAck](result).liftTo[F]
       _ <- _clientId.complete(clientId)
       _ <- _serverVersion.complete(resp.serverVersion)
       _ <- startAPI
@@ -135,14 +137,13 @@ class IBSocketClientCats[F[_]: Async: Console](
   private def startAPI: F[Unit] = {
     for {
       clientId <- _clientId.get
-      _ <- requestBeforeAPIStart(
-        encode[StartAPI](
-          StartAPI(
-            clientId = clientId,
-            optionalCapabilities = optionalCapabilities.getOrElse("")
-          )
+      encoded <- encode[StartAPI](
+        StartAPI(
+          clientId = clientId,
+          optionalCapabilities = optionalCapabilities.getOrElse("")
         )
-      )
+      ).pure
+      _ <- socket.write(Chunk.array(encoded))
       _ <- Console[F].println("Start msg pulling")
       _ <- startMsgConsumption
     } yield ()
@@ -155,6 +156,28 @@ class IBSocketClientCats[F[_]: Async: Console](
   override def reqCurrentTime(): F[CurrentTime] =
     fetchSingleResponse[ReqCurrentTime, CurrentTime](ReqCurrentTime())
 
+  override def reqScannerParameters(): F[ScannerParameters] =
+    fetchSingleResponse[ReqScannerParameters, ScannerParameters](
+      ReqScannerParameters()
+    )
+
+  override def setServerLogLevel(level: Int): F[Unit] =
+    fireAndForget[SetServerLogLevel](
+      SetServerLogLevel(loglevel = level)
+    )
+
+  override def reqManagedAccts(): F[ManagedAccounts] =
+    fetchSingleResponse[ReqManagedAccts, ManagedAccounts](ReqManagedAccts())
+
+  override def requestFA(faDataType: Int): F[ReceiveFA] =
+    fetchSingleResponse[RequestFA, ReceiveFA](
+      RequestFA(faDataType = faDataType)
+    )
+
+  //  override def reqNewsBulletins(allMsgs: Boolean): F[UpdateNewsBulletin] =
+//    fetchSingleResponse[ReqNewsBulletins, UpdateNewsBulletin](
+//      ReqNewsBulletins(allMsgs = allMsgs)
+//    )
 }
 
 object IBSocketClientCats {

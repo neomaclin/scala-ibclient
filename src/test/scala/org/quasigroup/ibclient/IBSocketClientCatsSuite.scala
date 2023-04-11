@@ -32,4 +32,44 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers {
     }
   }
 
+//  test("ibclient can request reqScannerParameters") { ibclient =>
+//    for {
+//      scannerParameters <- ibclient.reqScannerParameters()
+//    } yield {
+//      expect(scannerParameters.xml.nonEmpty)
+//    }
+//  }
+
+//  test("ibclient can request reqNewsBulletins") { ibclient =>
+//    for {
+//      newsBulletinsUpdate <- ibclient.reqNewsBulletins(true)
+//    } yield {
+//      expect(newsBulletinsUpdate.message.nonEmpty)
+//    }
+//  }
+
+  test("ibclient can request to set server log level") { ibclient =>
+    for {
+      _ <- ibclient.setServerLogLevel(1)
+    } yield {
+      expect(true)
+    }
+  }
+
+  test("ibclient can request for managed accounts") { ibclient =>
+    for {
+      accounts <- ibclient.reqManagedAccts()
+    } yield {
+      expect(accounts.accountsList.nonEmpty)
+    }
+  }
+
+//  I don't have the FA account.  
+//  test("ibclient can request for fa ") { ibclient =>
+//    for {
+//      receivedFA <- ibclient.requestFA(1)
+//    } yield {
+//      expect(receivedFA.xml.nonEmpty)
+//    }
+//  }
 }

@@ -70,7 +70,7 @@ object MsgReader:
       //         Decoder.decode[OpenOrder](msg)
       case NEXT_VALID_ID =>
         Decoder.decode[NextValidId](msg.tail)
-      //  case SCANNER_DATA =>
+      // case SCANNER_DATA =>
       //         Decoder.decode[ScannerData](msg)
       // case CONTRACT_DATA =>
       //         Decoder.decode[ContractData](msg)
@@ -82,16 +82,16 @@ object MsgReader:
       //         Decoder.decode[MarketDepth](msg)
       // case MARKET_DEPTH_L2 =>
       //         Decoder.decode[MarketDepthL2](msg)
-      // case NEWS_BULLETINS =>
-      //         Decoder.decode[NewsBulletins](msg)
+      case NEWS_BULLETINS =>
+        Decoder.decode[UpdateNewsBulletin](msg.tail)
       case MANAGED_ACCTS =>
-        Decoder.decode[ManagedAccounts](msg)
-      // case RECEIVE_FA =>
-      //         Decoder.decode[ReceiveFa](msg)
+        Decoder.decode[ManagedAccounts](msg.tail)
+      case RECEIVE_FA =>
+        Decoder.decode[ReceiveFA](msg.tail)
       // case HISTORICAL_DATA =>
       //         Decoder.decode[HistoricalData](msg)
-      // case SCANNER_PARAMETERS =>
-      //         Decoder.decode[ScannerParameters](msg)
+      case SCANNER_PARAMETERS =>
+        Decoder.decode[ScannerParameters](msg.tail)
       case CURRENT_TIME =>
         Decoder.decode[CurrentTime](msg.tail)
       // case REAL_TIME_BARS =>

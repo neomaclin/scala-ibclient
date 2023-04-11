@@ -166,7 +166,7 @@ enum RequestMsg:
   case SetServerLogLevel(
       msgId: Int = SET_SERVER_LOGLEVEL,
       version: Int = 1,
-      logleve: Int
+      loglevel: Int
   ) extends RequestMsg
 
   case ReqAutoOpenOrders(

@@ -1,6 +1,5 @@
 package org.quasigroup.ibclient.encoder
 
-
 import org.quasigroup.ibclient.client.encoder.Encoder
 import org.quasigroup.ibclient.client.encoder.Encoder.{encode, given}
 import org.quasigroup.ibclient.IBSocketClientCatsSuite.{expect, test}
@@ -14,7 +13,10 @@ object EncoderSuite extends SimpleIOSuite {
 
   pureTest("encoder can encode StartAPI") {
     val expected = {
-      val encoded = Encoder.IntEncoder(71) ++ Encoder.IntEncoder(2) ++ Encoder.IntEncoder(10) ++ StringEncoder("")
+      val encoded =
+        Encoder.IntEncoder(71) ++ Encoder.IntEncoder(2) ++ Encoder.IntEncoder(
+          10
+        ) ++ StringEncoder("")
       val length = Encoder.Length(encoded.length)
       val lengthEncoded = LengthEncoder.apply(length)
       (lengthEncoded ++ encoded).toArray
