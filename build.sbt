@@ -17,6 +17,7 @@ lazy val root = (project in file(".")).settings(
     name := "scala-bench-ta-stock",
     //compileOrder := CompileOrder.JavaThenScala,
     libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
       "org.typelevel" %% "kittens" % KittenVersion,
       "org.typelevel" %% "cats-mtl" % CatsMTLVersion,
       "org.typelevel" %% "log4cats-slf4j" % Log4CatsVersion, // Direct Slf4j Support - Recommended

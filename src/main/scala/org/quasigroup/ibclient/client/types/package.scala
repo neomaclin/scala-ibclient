@@ -33,8 +33,8 @@ final case class ComboLeg(
 final case class Contract(
     conId: Int,
     symbol: String,
-    secType: String,
-    expiry: String,
+    secType: SecType,
+    lastTradeDateOrContractMonth: String,
     strike: Double,
     right: String,
     multiplier: String,
@@ -42,11 +42,11 @@ final case class Contract(
     currency: String,
     localSymbol: String,
     tradingClass: String,
-    comboLegs: List[ComboLeg],
-    primaryExch: String,
-    includeExpired: Boolean,
-    secIdType: String,
-    secId: String
+    comboLegs: List[ComboLeg] = Nil,
+    primaryExch: String = "",
+    includeExpired: Boolean = false,
+    secIdType: SecIdType = SecIdType.Ignored,
+    secId: String = ""
 )
 
 final case class ContractDetails(
@@ -93,7 +93,7 @@ enum AlgoParam:
 end AlgoParam
 
 enum AlgoStrategy(val params: List[AlgoParam]):
-  case None extends AlgoStrategy(Nil)
+  case Ignored extends AlgoStrategy(Nil)
   case Vwap
       extends AlgoStrategy(
         List(
@@ -161,16 +161,16 @@ enum AlgoStrategy(val params: List[AlgoParam]):
 end AlgoStrategy
 
 enum HedgeType:
-  case None, Delta, Beta, Fx, Pair
+  case Ignored, Delta, Beta, Fx, Pair
 
 enum ContractRight:
-  case None, Put, Call
+  case Ignored, Put, Call
 
 enum VolatilityType:
-  case None, Daily, Annual
+  case Ignored, Daily, Annual
 
 enum ReferencePriceType:
-  case None, Midpoint, BidOrAsk
+  case Ignored, Midpoint, BidOrAsk
 
 enum TriggerMethod(val value: Int):
   case Default extends TriggerMethod(0)
@@ -186,7 +186,7 @@ enum Action:
   case BUY, SELL, SSHORT
 
 enum Rule80A(val value: String):
-  case None extends Rule80A("")
+  case Ignored extends Rule80A("")
   case IndivArb extends Rule80A("J")
   case IndivBigNonArb extends Rule80A("K")
   case IndivSmallNonArb extends Rule80A("I")
@@ -196,13 +196,13 @@ enum Rule80A(val value: String):
 end Rule80A
 
 enum OcaType:
-  case None, CancelWithBlocking, ReduceWithBlocking, ReduceWithoutBlocking
+  case Ignored, CancelWithBlocking, ReduceWithBlocking, ReduceWithoutBlocking
 
 enum TimeInForce:
   case DAY, GTC, OPG, IOC, GTD, GTT, AUC, FOK, GTX, DTC
 
 enum ExerciseType:
-  case None, Exercise, Lapse
+  case Ignored, Exercise, Lapse
 
 enum FundamentalType:
   case ReportSnapshot, ReportsFinSummary, ReportRatios, ReportsFinStatements,
@@ -237,10 +237,10 @@ enum FADataType:
   case UNUSED, GROUPS, PROFILES, ALIASES
 
 enum SecIdType:
-  case None, CUSIP, SEDOL, ISIN, RIC
+  case Ignored, CUSIP, SEDOL, ISIN, RIC
 
 enum SecType:
-  case None, STK, OPT, FUT, CASH, BOND, CFD, FOP, WAR, IOPT, FWD, BAG, IND,
+  case Ignored, STK, OPT, FUT, CASH, BOND, CFD, FOP, WAR, IOPT, FWD, BAG, IND,
     BILL, FUND, FIXED, SLB, NEWS, CMDTY, BSK, ICU, ICS, CRYPTO
 end SecType
 
@@ -255,7 +255,7 @@ final case class DepthMktDataDescription(
     aggGroup: Int
 )
 enum Method:
-  case None, EqualQuantity, AvailableEquity, NetLiq, PctChange
+  case Ignored, EqualQuantity, AvailableEquity, NetLiq, PctChange
 
 enum TickType(index: Int, field: String):
   case BID_SIZE extends TickType(0, "bidSize")
@@ -364,9 +364,6 @@ enum TickType(index: Int, field: String):
 
 end TickType
 
-enum MarketDataType:
-  case REALTIME, FROZEN, DELAYED, DELAYED_FROZEN
-
 final case class CommissionReport(
     execId: String,
     commission: Double,
@@ -377,7 +374,7 @@ final case class CommissionReport(
 )
 
 enum Liquidities:
-  case None, Added, Removed, RoudedOut
+  case Ignored, Added, Removed, RoudedOut
 
 final case class Execution(
     orderId: Int,
@@ -445,7 +442,7 @@ final case class Order(
     action: Action,
     algoStrategy: AlgoStrategy,
     algoId: String,
-    allOrNone: Boolean,
+    allOrIgnored: Boolean,
     auxPrice: Double,
     blockOrder: Boolean,
     clientId: Int,
@@ -549,7 +546,7 @@ object Order:
   val EMPTY_STR = ""
 
   enum Type(val apiString: String):
-    case None extends Type("")
+    case Ignored extends Type("")
     case MKT extends Type("MKT")
     case LMT extends Type("LMT")
     case STP extends Type("STP")
@@ -673,5 +670,4 @@ final case class PriceIncrement(lowEdge: Double, increment: Double)
 
 enum UsePriceMgmtAlgo:
   case Default, NotUse, Use
-
 final case class ConnectionAck(serverVersion: Int, time: String)

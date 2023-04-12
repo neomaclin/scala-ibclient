@@ -282,7 +282,7 @@ enum ResponseMsg:
       extraData: String
   ) extends ResponseMsg
 
-  case SmartComponents(reqId: Int, theMap: Map[Integer, (String, Char)])
+  case SmartComponents(reqId: Int, theMap: Map[Int, (String, Char)])
       extends ResponseMsg
 
   case TickReqParams(
@@ -323,16 +323,16 @@ enum ResponseMsg:
   case MarketRule(marketRuleId: Int, priceIncrements: List[PriceIncrement])
       extends ResponseMsg
 
-  case Pnl(
+  case PnL(
       reqId: Int,
       dailyPnL: Double,
       unrealizedPnL: Double,
       realizedPnL: Double
   ) extends ResponseMsg
 
-  case PnlSingle(
+  case PnLSingle(
       reqId: Int,
-      pos: Nothing,
+      pos: Decimal,
       dailyPnL: Double,
       unrealizedPnL: Double,
       realizedPnL: Double,
@@ -401,3 +401,5 @@ enum ResponseMsg:
   ) extends ResponseMsg
 
   case UserInfo(reqId: Int, whiteBrandingId: String) extends ResponseMsg
+
+  case SecurityDefinitionOptionalParameterEndMsg(reqId: Int) extends ResponseMsg

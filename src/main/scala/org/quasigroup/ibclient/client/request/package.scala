@@ -137,6 +137,15 @@ enum RequestMsg:
       acctCode: String
   ) extends RequestMsg
 
+  case ReqAccountUpdatesMulit(
+      msgId: Int = REQ_ACCOUNT_UPDATES_MULTI,
+      version: Int = 1,
+      reqId: Int,
+      account: String,
+      modelCode: String,
+      ledgerAndNLV: Boolean
+  ) extends RequestMsg
+
   case ReqExecutions(
       msgId: Int = REQ_EXECUTIONS,
       version: Int = 3,

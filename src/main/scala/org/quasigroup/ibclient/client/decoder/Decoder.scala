@@ -8,12 +8,19 @@ import scala.deriving.Mirror
 import scala.util.Try
 
 object Decoder {
+  def partiallyApply[T](
+      entry: Array[String],
+      matching: PartialFunction[Array[String], Either[Throwable, T]]
+  ): Either[Throwable, T] =
+    matching.applyOrElse(entry, _ => Left(new Exception("msg format error")))
 
   def decodeMsg(entry: Array[String]): Either[Throwable, ResponseMsg] =
-    entry match
-      case Array(msgId, rest: _*) =>
+    partiallyApply(
+      entry,
+      { case Array(msgId, rest: _*) =>
         MsgReader.read(msgId.toInt, rest.toArray)
-      case _ => Left(new Exception("msg format error"))
+      }
+    )
 
   def decode[A: Decoder](entry: Array[String]): Either[Throwable, A] =
     summon[Decoder[A]](entry)
@@ -66,12 +73,16 @@ object Decoder {
             case (Right(item), Left(accError))     => Left(accError)
           }
           .map(mirror.fromProduct)
-
     }
 
+  inline given decodeSimpleSum[T](using
+      mirror: Mirror.SumOf[T],
+      gen: Int => T
+  ): Decoder[T] = IntDecoder.map(gen)
 }
 
 trait Decoder[A] { self =>
+
   def apply(entry: Array[String]): Either[Throwable, A]
 
   final def map[B](f: A => B): Decoder[B] = (entry: Array[String]) =>

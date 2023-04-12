@@ -40,13 +40,12 @@ object Encoder {
 
   import scala.compiletime.{erasedValue, summonInline}
 
-  def encoderSum[T](
-      s: Mirror.SumOf[T],
-      encoders: => List[Encoder[_]]
+  def encoderSimplySum[T](
+      s: Mirror.SumOf[T]
   ): Encoder[T] = new Encoder[T]:
     def apply(t: T): Buffer[Byte] = {
       val index = s.ordinal(t) // (2)
-      encoders(index).asInstanceOf[Encoder[Any]](t) // (3)
+      IntEncoder.apply(index)
     }
   def encoderProduct[T](
       p: Mirror.ProductOf[T],
@@ -67,7 +66,7 @@ object Encoder {
   inline given derived[T](using m: Mirror.Of[T]): Encoder[T] =
     lazy val encoders = summonAll[m.MirroredElemTypes]
     inline m match
-      case s: Mirror.SumOf[T]     => encoderSum(s, encoders)
+      case s: Mirror.SumOf[T]     => encoderSimplySum(s)
       case p: Mirror.ProductOf[T] => encoderProduct(p, encoders)
 
 }

@@ -64,7 +64,7 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers {
     }
   }
 
-//  I don't have the FA account.  
+//  I don't have the FA account.
 //  test("ibclient can request for fa ") { ibclient =>
 //    for {
 //      receivedFA <- ibclient.requestFA(1)

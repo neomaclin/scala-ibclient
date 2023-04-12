@@ -8,6 +8,7 @@ import org.quasigroup.ibclient.client.IBClient
 import weaver.SimpleIOSuite
 
 import scala.collection.mutable
+import org.quasigroup.ibclient.client.types.*
 
 object EncoderSuite extends SimpleIOSuite {
 
@@ -23,5 +24,12 @@ object EncoderSuite extends SimpleIOSuite {
     }
     val result = encode[StartAPI](StartAPI(clientId = 10))
     expect(expected sameElements result)
+  }
+
+  pureTest("encoder can encode simple enum") {
+
+    val result = encode[MktDataType](MktDataType.Delayed)
+    println(String.valueOf(result))
+    expect(true)
   }
 }
