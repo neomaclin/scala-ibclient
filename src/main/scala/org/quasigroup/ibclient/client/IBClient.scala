@@ -1,20 +1,9 @@
 package org.quasigroup.ibclient.client
 
-import cats.effect.std.Console
-import cats.effect.{Async, Resource}
-import com.comcast.ip4s.{Host, Port, SocketAddress}
-import fs2.interop.scodec.StreamDecoder
-import fs2.io.net.Network
-import fs2.{Chunk, Stream}
 import org.quasigroup.ibclient.client.response.ResponseMsg.*
-import org.quasigroup.ibclient.client.types.ConnectionAck
-import scodec.bits.ByteVector
+import fs2.Stream
 
 trait IBClient[F[_]] {
-
-  def eConnect(clientId: Int): F[ConnectionAck]
-
-  def eDisconnect(): F[Unit]
 
   def reqCurrentTime(): F[CurrentTime]
 
@@ -28,7 +17,7 @@ trait IBClient[F[_]] {
 
   def setServerLogLevel(level: Int): F[Unit]
 
-  def reqPositions(): Stream[F, Position]
+  def reqPositions(): Stream[F, PositionMsg]
 
   def cancelPositions(): F[Unit]
 

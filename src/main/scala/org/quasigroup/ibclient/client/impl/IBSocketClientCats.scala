@@ -17,7 +17,7 @@ import org.quasigroup.ibclient.client.encoder.Encoder
 import org.quasigroup.ibclient.client.encoder.Encoder.{*, given}
 import org.quasigroup.ibclient.client.exceptions.InvalidMessageLengthException
 import org.quasigroup.ibclient.client.request.RequestMsg.*
-import org.quasigroup.ibclient.client.response.ResponseMsg
+import org.quasigroup.ibclient.client.response.{MsgDecoders, ResponseMsg}
 import org.quasigroup.ibclient.client.response.ResponseMsg.*
 import org.quasigroup.ibclient.client.types.ConnectionAck
 import scodec.Err.General
@@ -49,7 +49,7 @@ class IBSocketClientCats[F[_]: Async: Console](
           socket.reads
             .through(ibFramesString.toPipeByte)
             .evalTap(strs => Console[F].println(strs.mkString("[", ",", "]")))
-            .evalMap(Decoder.decodeMsg(_).liftTo[F])
+            .evalMap(MsgDecoders.decode(_).liftTo[F])
             .evalTap(Console[F].println)
             .takeThrough(_ != ConnectionClosed)
             .evalTap(msgQueue.offer)
@@ -112,7 +112,7 @@ class IBSocketClientCats[F[_]: Async: Console](
       request: Req
   ): F[Unit] = socket.write(Chunk.array(encode[Req](request)))
 
-  override def eConnect(clientId: Int): F[ConnectionAck] =
+  private def eConnect(clientId: Int): F[ConnectionAck] =
     for
       encoded <- ("API\u0000".getBytes ++ encode[String](
         buildVersionString(MIN_VERSION, MAX_VERSION)
@@ -141,7 +141,7 @@ class IBSocketClientCats[F[_]: Async: Console](
       _ <- startAPI
     yield resp
 
-  override def eDisconnect(): F[Unit] =
+  private def eDisconnect(): F[Unit] =
     for
       _ <- msgPullingFiberDeferred.get.flatMap(_.cancel)
       _ <- Console[F].println("Msg pull stopped")
@@ -177,8 +177,8 @@ class IBSocketClientCats[F[_]: Async: Console](
       SetServerLogLevel(loglevel = level)
     )
 
-  override def reqPositions(): Stream[F, Position] =
-    fetchResponses[ReqPositions, Position](ReqPositions())
+  override def reqPositions(): Stream[F, PositionMsg] =
+    fetchResponses[ReqPositions, PositionMsg](ReqPositions())
 
   override def cancelPositions(): F[Unit] =
     fireAndForget[CancelPositions](
@@ -193,10 +193,6 @@ class IBSocketClientCats[F[_]: Async: Console](
       RequestFA(faDataType = faDataType)
     )
 
-  //  override def reqNewsBulletins(allMsgs: Boolean): F[UpdateNewsBulletin] =
-//    fetchSingleResponse[ReqNewsBulletins, UpdateNewsBulletin](
-//      ReqNewsBulletins(allMsgs = allMsgs)
-//    )
 end IBSocketClientCats
 
 object IBSocketClientCats:

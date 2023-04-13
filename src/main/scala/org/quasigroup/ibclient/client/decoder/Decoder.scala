@@ -1,6 +1,6 @@
 package org.quasigroup.ibclient.client.decoder
 
-import org.quasigroup.ibclient.client.response.{MsgReader, ResponseMsg}
+import org.quasigroup.ibclient.client.response.ResponseMsg
 import org.quasigroup.ibclient.client.types.Decimal
 
 import scala.compiletime.summonFrom
@@ -8,19 +8,6 @@ import scala.deriving.Mirror
 import scala.util.Try
 
 object Decoder {
-  def partiallyApply[T](
-      entry: Array[String],
-      matching: PartialFunction[Array[String], Either[Throwable, T]]
-  ): Either[Throwable, T] =
-    matching.applyOrElse(entry, _ => Left(new Exception("msg format error")))
-
-  def decodeMsg(entry: Array[String]): Either[Throwable, ResponseMsg] =
-    partiallyApply(
-      entry,
-      { case Array(msgId, rest: _*) =>
-        MsgReader.read(msgId.toInt, rest.toArray)
-      }
-    )
 
   inline def decode[A: Decoder](entry: Array[String]): Either[Throwable, A] =
     summon[Decoder[A]](entry)

@@ -1,8 +1,7 @@
 package org.quasigroup.ibclient.client.request
 
-import org.quasigroup.ibclient.client.request.MsgId.*
+import MsgId.*
 import org.quasigroup.ibclient.client.types.*
-import org.quasigroup.ibclient.core.*
 
 enum RequestMsg:
   case StartAPI(

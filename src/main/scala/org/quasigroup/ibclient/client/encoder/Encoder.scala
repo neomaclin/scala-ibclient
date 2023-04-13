@@ -11,29 +11,23 @@ object Encoder {
 
   inline def encode[T: Encoder](raw: T): Array[Byte] = {
     val encoded = summon[Encoder[T]](raw)
-    (LengthEncoder(Length(encoded.length)) ++ encoded).toArray
-  }
-
-  opaque type Length = Int
-  object Length:
-    def apply(value: Int): Length = value
-
-  given LengthEncoder: Encoder[Length] = (length: Length) =>
-    Array(
+    val length = encoded.length
+    (Array(
       (0xff & (length >> 24)).toByte,
       (0xff & (length >> 16)).toByte,
       (0xff & (length >> 8)).toByte,
       (0xff & length).toByte
-    ).toBuffer
+    ).toBuffer ++ encoded).toArray
+  }
 
   inline given Encoder[String] = _.getBytes.toBuffer.+=(0)
 
-  inline given IntEncoder: Encoder[Int] =
-    summon[Encoder[String]].contramap(String.valueOf)
+  inline given Encoder[Int] = summon[Encoder[String]].contramap(String.valueOf)
 
   inline given Encoder[Array[Byte]] = _.toBuffer
 
-  inline given Encoder[Boolean] = IntEncoder.contramap(if _ then 1 else 0)
+  inline given Encoder[Boolean] =
+    summon[Encoder[Int]].contramap(if _ then 1 else 0)
 
   inline given Encoder[Double] = summon[Encoder[String]].contramap(_.toString)
 
@@ -44,7 +38,7 @@ object Encoder {
   ): Encoder[T] = new Encoder[T]:
     def apply(t: T): mutable.Buffer[Byte] = {
       val index = s.ordinal(t) // (2)
-      IntEncoder.apply(index)
+      summon[Encoder[Int]](index)
     }
   inline def encoderProduct[T](
       p: Mirror.ProductOf[T],

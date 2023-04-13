@@ -9,7 +9,7 @@ import org.scalacheck.Gen
 import weaver.IOSuite
 import weaver.scalacheck.*
 
-object IBSocketClientCatsSuite extends IOSuite with Checkers {
+object IBSocketClientCatsSuite extends IOSuite with Checkers:
 
   override type Res = IBClient[IO]
 
@@ -31,22 +31,7 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers {
       expect(familycodes.familyCodes.isEmpty)
     }
   }
-//
-////  test("ibclient can request reqScannerParameters") { ibclient =>
-////    for {
-////      scannerParameters <- ibclient.reqScannerParameters()
-////    } yield {
-////      expect(scannerParameters.xml.nonEmpty)
-////    }
-////  }
-//
-////  test("ibclient can request reqNewsBulletins") { ibclient =>
-////    for {
-////      newsBulletinsUpdate <- ibclient.reqNewsBulletins(true)
-////    } yield {
-////      expect(newsBulletinsUpdate.message.nonEmpty)
-////    }
-////  }
+
 //
 //  test("ibclient can request to set server log level") { ibclient =>
 //    for {
@@ -65,13 +50,14 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers {
       expect(positions.size >= 1)
     }
   }
-//  test("ibclient can request for managed accounts") { ibclient =>
-//    for {
-//      accounts <- ibclient.reqManagedAccts()
-//    } yield {
-//      expect(accounts.accountsList.nonEmpty)
-//    }
-//  }
+
+  test("ibclient can request for managed accounts") { ibclient =>
+    for {
+      accounts <- ibclient.reqManagedAccts()
+    } yield {
+      expect(accounts.accountsList.nonEmpty)
+    }
+  }
 
 //  I don't have the FA account.
 //  test("ibclient can request for fa ") { ibclient =>
@@ -81,4 +67,3 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers {
 //      expect(receivedFA.xml.nonEmpty)
 //    }
 //  }
-}

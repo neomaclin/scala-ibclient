@@ -1,7 +1,6 @@
 package org.quasigroup.ibclient.client.response
 
 import org.quasigroup.ibclient.client.types.*
-import org.quasigroup.ibclient.core.Bar
 
 enum ResponseMsg:
   case TickPrice(
@@ -183,7 +182,7 @@ enum ResponseMsg:
   case CommissionReportMsg(commissionReport: CommissionReport)
       extends ResponseMsg
 
-  case Position(
+  case PositionMsg(
       account: String,
       contract: Contract,
       pos: Decimal,
@@ -396,9 +395,9 @@ enum ResponseMsg:
 
   case ReplaceFAEnd(reqId: Int, text: String) extends ResponseMsg
 
-  case WshMetaData(reqId: Int, dataJson: String) extends ResponseMsg
+  case WshMetaDataMsg(reqId: Int, dataJson: String) extends ResponseMsg
 
-  case WshEventData(reqId: Int, dataJson: String) extends ResponseMsg
+  case WshEventDataMsg(reqId: Int, dataJson: String) extends ResponseMsg
 
   case HistoricalSchedule(
       reqId: Int,
