@@ -9,13 +9,16 @@ import cats.syntax.option._
 import scala.annotation.tailrec
 
 object MsgDecoders:
-  given Decoder[MktDataType] = summon[Decoder[Int]].map(MktDataType.fromOrdinal)
+  inline given Decoder[MktDataType] =
+    summon[Decoder[Int]].map(MktDataType.fromOrdinal)
 
-  given Decoder[NewsType] = summon[Decoder[Int]].map(NewsType.fromOrdinal)
+  inline given Decoder[NewsType] =
+    summon[Decoder[Int]].map(NewsType.fromOrdinal)
 
-  given Decoder[TickType] = summon[Decoder[Int]].map(TickType.fromOrdinal)
+  inline given Decoder[TickType] =
+    summon[Decoder[Int]].map(TickType.fromOrdinal)
 
-  given Decoder[TickPrice] with
+  inline given Decoder[TickPrice] with
     def apply(
         entry: Array[String]
     ): Either[Throwable, TickPrice] =
@@ -72,7 +75,7 @@ object MsgDecoders:
 
   end given
 
-  given Decoder[Position] with
+  inline given Decoder[Position] with
     def apply(
         entry: Array[String]
     ): Either[Throwable, Position] =
@@ -120,7 +123,7 @@ object MsgDecoders:
 
   end given
 
-  given Decoder[PositionMulti] with
+  inline given Decoder[PositionMulti] with
     def apply(
         entry: Array[String]
     ): Either[Throwable, PositionMulti] =
@@ -175,7 +178,7 @@ object MsgDecoders:
 
   end given
 
-  given Decoder[SecurityDefinitionOptionalParameter] with
+  inline given Decoder[SecurityDefinitionOptionalParameter] with
     def apply(
         entry: Array[String]
     ): Either[Throwable, SecurityDefinitionOptionalParameter] =
@@ -209,16 +212,16 @@ object MsgDecoders:
 
   end given
 
-  given Decoder[CommissionReportMsg] =
+  inline given Decoder[CommissionReportMsg] =
     summon[Decoder[CommissionReport]].map(CommissionReportMsg(_))
 
-  given Decoder[VerifyAndAuthCompleted] =
+  inline given Decoder[VerifyAndAuthCompleted] =
     summon[Decoder[VerifyCompleted]].map(v =>
       VerifyAndAuthCompleted(v.isSuccessful, v.errorText)
     )
   end given
 
-  given Decoder[VerifyCompleted] with
+  inline given Decoder[VerifyCompleted] with
     def apply(
         entry: Array[String]
     ): Either[Throwable, VerifyCompleted] =
@@ -230,7 +233,7 @@ object MsgDecoders:
       )
   end given
 
-  given Decoder[DeltaNeutralValidation] with
+  inline given Decoder[DeltaNeutralValidation] with
     def apply(
         entry: Array[String]
     ): Either[Throwable, DeltaNeutralValidation] =
@@ -247,7 +250,7 @@ object MsgDecoders:
       )
   end given
 
-  given Decoder[HistoricalSchedule] with
+  inline given Decoder[HistoricalSchedule] with
 
     @tailrec
     private def buildHistoricalSessions(
@@ -292,7 +295,7 @@ object MsgDecoders:
       )
   end given
 
-  given Decoder[FamilyCodes] = new Decoder[FamilyCodes]:
+  inline given Decoder[FamilyCodes] = new Decoder[FamilyCodes]:
     @tailrec
     private def buildFamilyCodes(
         entry: List[String],
@@ -316,7 +319,7 @@ object MsgDecoders:
 
   end given
 
-  given Decoder[SmartComponents] with
+  inline given Decoder[SmartComponents] with
 
     @tailrec
     private def buildSmartComponents(
@@ -354,7 +357,7 @@ object MsgDecoders:
       )
   end given
 
-  given Decoder[MktDepthExchanges] = new Decoder[MktDepthExchanges]:
+  inline given Decoder[MktDepthExchanges] = new Decoder[MktDepthExchanges]:
     @tailrec
     private def buildMktDepthExchanges(
         entry: List[String],
@@ -387,7 +390,7 @@ object MsgDecoders:
 
   end given
 
-  given Decoder[NewsProviders] = new Decoder[NewsProviders]:
+  inline given Decoder[NewsProviders] = new Decoder[NewsProviders]:
     @tailrec
     private def buildNewsProviders(
         entry: List[String],
@@ -417,7 +420,7 @@ object MsgDecoders:
 
   end given
 
-  given Decoder[SoftDollarTiers] = new Decoder[SoftDollarTiers]:
+  inline given Decoder[SoftDollarTiers] = new Decoder[SoftDollarTiers]:
     @tailrec
     private def buildSoftDollarTiers(
         entry: List[String],
@@ -450,7 +453,7 @@ object MsgDecoders:
 
   end given
 
-  given Decoder[MarketRule] = new Decoder[MarketRule]:
+  inline given Decoder[MarketRule] = new Decoder[MarketRule]:
     @tailrec
     private def buildMarketRule(
         entry: List[String],

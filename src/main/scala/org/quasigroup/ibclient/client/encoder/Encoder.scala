@@ -27,16 +27,16 @@ object Encoder {
       (0xff & length).toByte
     ).toBuffer
 
-  given StringEncoder: Encoder[String] = _.getBytes.toBuffer.+=(0)
+  inline given Encoder[String] = _.getBytes.toBuffer.+=(0)
 
-  given IntEncoder: Encoder[Int] = StringEncoder.contramap(String.valueOf)
+  inline given IntEncoder: Encoder[Int] =
+    summon[Encoder[String]].contramap(String.valueOf)
 
-  given BytesEncoder: Encoder[Array[Byte]] = _.toBuffer
+  inline given Encoder[Array[Byte]] = _.toBuffer
 
-  given BooleanEncoder: Encoder[Boolean] =
-    IntEncoder.contramap(if _ then 1 else 0)
+  inline given Encoder[Boolean] = IntEncoder.contramap(if _ then 1 else 0)
 
-  given DoubleEncoder: Encoder[Double] = StringEncoder.contramap(_.toString)
+  inline given Encoder[Double] = summon[Encoder[String]].contramap(_.toString)
 
   import scala.compiletime.{erasedValue, summonInline}
 

@@ -29,7 +29,7 @@ object Decimal:
   def parse(str: String): Either[Throwable, Decimal] =
     if str.isEmpty then Left(new Exception("nothing to parse"))
     else if NAN_STRING == str then Right(NaN)
-    else {
+    else
       val text = str.trim().replaceAll(",", "")
       Try(
         new java.math.BigDecimal(
@@ -39,7 +39,6 @@ object Decimal:
           MATH_CONTEXT
         )
       ).map(new scala.math.BigDecimal(_)).toEither
-    }
 
   def apply(value: BigDecimal): Decimal = value
 
@@ -60,10 +59,9 @@ object Decimal:
     if v == Double.MaxValue then Right(INVALID)
     else if v.isZero then Right(ZERO)
     else if v.isNaN || v.isInfinite then Right(NaN)
-    else {
+    else
       val df = new DecimalFormat("#")
       df.setMaximumFractionDigits(16)
       parse(df.format(v))
-    }
 
   // def apply(value: BigDecimal): Decimal = value

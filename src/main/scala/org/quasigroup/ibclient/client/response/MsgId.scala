@@ -1,6 +1,6 @@
 package org.quasigroup.ibclient.client.response
 
-object MsgId {
+object MsgId:
   // incoming msg id's
   val END_CONN = -1
   val TICK_PRICE = 1
@@ -85,5 +85,3 @@ object MsgId {
   val WSH_EVENT_DATA = 105
   val HISTORICAL_SCHEDULE = 106
   val USER_INFO = 107
-
-}

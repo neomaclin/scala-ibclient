@@ -29,7 +29,7 @@ import scala.reflect.ClassTag
 class IBSocketClientCats[F[_]: Async: Console](
     socket: Socket[F],
     optionalCapabilities: Option[String]
-) extends IBClient[F] {
+) extends IBClient[F]:
 
   import IBSocketClientCats.{*, given}
 
@@ -39,8 +39,8 @@ class IBSocketClientCats[F[_]: Async: Console](
   private val _clientId = Deferred.unsafe[F, Int]
   private val _serverVersion = Deferred.unsafe[F, Int]
 
-  private def startMsgConsumption: F[Unit] = {
-    for {
+  private def startMsgConsumption: F[Unit] =
+    for
       msgQueue <- Queue.unbounded[F, ResponseMsg]
       msgTopic <- Topic[F, ResponseMsg]
       pullFiber <- Stream
@@ -60,8 +60,7 @@ class IBSocketClientCats[F[_]: Async: Console](
         .start
       _ <- msgPullingFiberDeferred.complete(pullFiber)
       _ <- msgTopicDeferred.complete(msgTopic)
-    } yield ()
-  }
+    yield ()
 
   private val ibFramesString: StreamDecoder[Array[String]] =
     StreamDecoder
@@ -81,15 +80,16 @@ class IBSocketClientCats[F[_]: Async: Console](
 
   private def fetchSingleResponse[Req: Encoder, Resp <: ResponseMsg: ClassTag](
       request: Req
-  ): F[Resp] = for {
-    _ <- socket.write(Chunk.array(encode[Req](request)))
-    msgStream <- msgTopicDeferred.get
-    resp <- msgStream.subscribeUnbounded
-      .collectFirst { case item: Resp => item }
-      .evalTap(item => Console[F].println(s"fetched msg:$item"))
-      .compile
-      .lastOrError
-  } yield resp
+  ): F[Resp] =
+    for
+      _ <- socket.write(Chunk.array(encode[Req](request)))
+      msgStream <- msgTopicDeferred.get
+      resp <- msgStream.subscribeUnbounded
+        .collectFirst { case item: Resp => item }
+        .evalTap(item => Console[F].println(s"fetched msg:$item"))
+        .compile
+        .lastOrError
+    yield resp
 
   private def fetchResponsesWithEndType[
       Req: Encoder,
@@ -115,13 +115,10 @@ class IBSocketClientCats[F[_]: Async: Console](
 
   private def fireAndForget[Req: Encoder](
       request: Req
-  ): F[Unit] = for {
-    requestEncoded <- encode[Req](request).pure
-    _ <- socket.write(Chunk.array(requestEncoded))
-  } yield ()
+  ): F[Unit] = socket.write(Chunk.array(encode[Req](request)))
 
   override def eConnect(clientId: Int): F[ConnectionAck] =
-    for {
+    for
       encoded <- ("API\u0000".getBytes ++ encode[String](
         buildVersionString(MIN_VERSION, MAX_VERSION)
       )).pure
@@ -147,16 +144,16 @@ class IBSocketClientCats[F[_]: Async: Console](
       _ <- _clientId.complete(clientId)
       _ <- _serverVersion.complete(resp.serverVersion)
       _ <- startAPI
-    } yield resp
+    yield resp
 
   override def eDisconnect(): F[Unit] =
-    for {
+    for
       _ <- msgPullingFiberDeferred.get.flatMap(_.cancel)
       _ <- Console[F].println("Msg pull stopped")
-    } yield ()
+    yield ()
 
-  private def startAPI: F[Unit] = {
-    for {
+  private def startAPI: F[Unit] =
+    for
       clientId <- _clientId.get
       encoded <- encode[StartAPI](
         StartAPI(
@@ -167,9 +164,7 @@ class IBSocketClientCats[F[_]: Async: Console](
       _ <- socket.write(Chunk.array(encoded))
       _ <- Console[F].println("Start msg pulling")
       _ <- startMsgConsumption
-    } yield ()
-
-  }
+    yield ()
 
   override def reqFamilyCodes(): F[FamilyCodes] =
     fetchSingleResponse[ReqFamilyCodes, FamilyCodes](ReqFamilyCodes())
@@ -210,20 +205,17 @@ class IBSocketClientCats[F[_]: Async: Console](
 //    fetchSingleResponse[ReqNewsBulletins, UpdateNewsBulletin](
 //      ReqNewsBulletins(allMsgs = allMsgs)
 //    )
-}
+end IBSocketClientCats
 
-object IBSocketClientCats {
+object IBSocketClientCats:
   given Decoder[ConnectionAck] with
     override def apply(
         entry: Array[String]
-    ): Either[Throwable, ConnectionAck] = {
-      entry match {
+    ): Either[Throwable, ConnectionAck] =
+      entry match
         case Array(version, timestamp) =>
           Right(ConnectionAck(version.toInt, timestamp))
         case _ => Left(RuntimeException("wrong response"))
-      }
-    }
-
   end given
 
   val MAX_MSG_LENGTH: Int = 0xffffff
@@ -240,4 +232,5 @@ object IBSocketClientCats {
         .evalTap(_.eConnect(clientId))
       _ <- Resource.onFinalize(client.eDisconnect())
     yield client
-}
+
+end IBSocketClientCats
