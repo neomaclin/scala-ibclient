@@ -28,6 +28,10 @@ trait IBClient[F[_]] {
 
   def setServerLogLevel(level: Int): F[Unit]
 
+  def reqPositions():  Stream[F,Position]
+
+  def cancelPositions(): F[Unit]
+
   def reqManagedAccts(): F[ManagedAccounts]
 
   def requestFA(faDataType: Int): F[ReceiveFA]

@@ -20,8 +20,8 @@ object MsgReader:
       //    Decoder.decode[TickPrice](msg)
       case TICK_SIZE =>
         Decoder.decode[TickSize](msg.tail)
-      // case POSITION =>
-      //   Decoder.decode[Position](msg)
+      case POSITION =>
+        Decoder.decode[Position](msg)
       case POSITION_END =>
         Right(PositionEnd)
       case ACCOUNT_SUMMARY =>
@@ -86,14 +86,14 @@ object MsgReader:
         Decoder.decode[AccountDownloadEnd](msg.tail)
       case EXECUTION_DATA_END =>
         Decoder.decode[ExecDetailsEnd](msg.tail)
-      // case DELTA_NEUTRAL_VALIDATION =>
-      //         Decoder.decode[DeltaNeutralValidation](msg)
+      case DELTA_NEUTRAL_VALIDATION =>
+        Decoder.decode[DeltaNeutralValidation](msg.tail)
       case TICK_SNAPSHOT_END =>
         Decoder.decode[TickSnapshotEnd](msg.tail)
       case MARKET_DATA_TYPE =>
         Decoder.decode[MarketDataType](msg)
-      // case COMMISSION_REPORT =>
-      //         Decoder.decode[CommissionReport](msg)
+      case COMMISSION_REPORT =>
+        Decoder.decode[CommissionReportMsg](msg.tail)
       case VERIFY_MESSAGE_API =>
         Decoder.decode[VerifyMessageAPI](msg.tail)
       case VERIFY_COMPLETED =>
@@ -106,16 +106,16 @@ object MsgReader:
         Decoder.decode[VerifyAndAuthMessageAPI](msg.tail)
       case VERIFY_AND_AUTH_COMPLETED =>
         Decoder.decode[VerifyAndAuthCompleted](msg.tail)
-      // case POSITION_MULTI =>
-      //         Decoder.decode[PositionMulti](msg.tail)
+      case POSITION_MULTI =>
+        Decoder.decode[PositionMulti](msg.tail)
       case POSITION_MULTI_END =>
         Decoder.decode[PositionMultiEnd](msg.tail)
       case ACCOUNT_UPDATE_MULTI =>
         Decoder.decode[AccountUpdateMulti](msg.tail)
       case ACCOUNT_UPDATE_MULTI_END =>
         Decoder.decode[AccountUpdateMultiEnd](msg.tail)
-      // case SECURITY_DEFINITION_OPTION_PARAMETER =>
-      //         Decoder.decode[SecurityDefinitionOptionalParameter](msg)
+      case SECURITY_DEFINITION_OPTION_PARAMETER =>
+        Decoder.decode[SecurityDefinitionOptionalParameter](msg)
       case SECURITY_DEFINITION_OPTION_PARAMETER_END =>
         Decoder.decode[SecurityDefinitionOptionalParameterEnd](msg)
       case SOFT_DOLLAR_TIERS =>

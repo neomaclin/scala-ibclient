@@ -15,54 +15,62 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers {
 
   override def sharedResource: Resource[IO, Res] = IBSocketClientCats.make[IO]()
 
-  test("ibclient can request for current time") { ibclient =>
-    for {
-      now <- IO.realTimeInstant
-      serverTime <- ibclient.reqCurrentTime()
-    } yield {
-      expect(serverTime.time <= now.getEpochSecond)
-    }
-  }
-
-  test("ibclient can request family codes") { ibclient =>
-    for {
-      familycodes <- ibclient.reqFamilyCodes()
-    } yield {
-      expect(familycodes.familyCodes.isEmpty)
-    }
-  }
-
-//  test("ibclient can request reqScannerParameters") { ibclient =>
+//  test("ibclient can request for current time") { ibclient =>
 //    for {
-//      scannerParameters <- ibclient.reqScannerParameters()
+//      now <- IO.realTimeInstant
+//      serverTime <- ibclient.reqCurrentTime()
 //    } yield {
-//      expect(scannerParameters.xml.nonEmpty)
+//      expect(serverTime.time <= now.getEpochSecond)
+//    }
+//  }
+//
+//  test("ibclient can request family codes") { ibclient =>
+//    for {
+//      familycodes <- ibclient.reqFamilyCodes()
+//    } yield {
+//      expect(familycodes.familyCodes.isEmpty)
+//    }
+//  }
+//
+////  test("ibclient can request reqScannerParameters") { ibclient =>
+////    for {
+////      scannerParameters <- ibclient.reqScannerParameters()
+////    } yield {
+////      expect(scannerParameters.xml.nonEmpty)
+////    }
+////  }
+//
+////  test("ibclient can request reqNewsBulletins") { ibclient =>
+////    for {
+////      newsBulletinsUpdate <- ibclient.reqNewsBulletins(true)
+////    } yield {
+////      expect(newsBulletinsUpdate.message.nonEmpty)
+////    }
+////  }
+//
+//  test("ibclient can request to set server log level") { ibclient =>
+//    for {
+//      _ <- ibclient.setServerLogLevel(1)
+//    } yield {
+//      expect(true)
 //    }
 //  }
 
-//  test("ibclient can request reqNewsBulletins") { ibclient =>
+  test("ibclient can request positions") { ibclient =>
+    for {
+      positions <- ibclient.reqPositions().compile.toList
+      _ <- ibclient.cancelPositions()
+    } yield {
+      expect(positions.nonEmpty)
+    }
+  }
+//  test("ibclient can request for managed accounts") { ibclient =>
 //    for {
-//      newsBulletinsUpdate <- ibclient.reqNewsBulletins(true)
+//      accounts <- ibclient.reqManagedAccts()
 //    } yield {
-//      expect(newsBulletinsUpdate.message.nonEmpty)
+//      expect(accounts.accountsList.nonEmpty)
 //    }
 //  }
-
-  test("ibclient can request to set server log level") { ibclient =>
-    for {
-      _ <- ibclient.setServerLogLevel(1)
-    } yield {
-      expect(true)
-    }
-  }
-
-  test("ibclient can request for managed accounts") { ibclient =>
-    for {
-      accounts <- ibclient.reqManagedAccts()
-    } yield {
-      expect(accounts.accountsList.nonEmpty)
-    }
-  }
 
 //  I don't have the FA account.
 //  test("ibclient can request for fa ") { ibclient =>

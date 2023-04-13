@@ -173,7 +173,7 @@ enum ResponseMsg:
 
   case MarketDataType(reqId: Int, marketDataType: Int) extends ResponseMsg
 
-  case CommissionReport(commissionReport: CommissionReport) extends ResponseMsg
+  case CommissionReportMsg(commissionReport: CommissionReport) extends ResponseMsg
 
   case Position(
       account: String,

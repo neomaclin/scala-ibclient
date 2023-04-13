@@ -82,8 +82,7 @@ class IBSocketClientCats[F[_]: Async: Console](
   private def fetchSingleResponse[Req: Encoder, Resp <: ResponseMsg: ClassTag](
       request: Req
   ): F[Resp] = for {
-    requestEncoded <- encode[Req](request).pure
-    _ <- socket.write(Chunk.array(requestEncoded))
+    _ <- socket.write(Chunk.array(encode[Req](request)))
     msgStream <- msgTopicDeferred.get
     resp <- msgStream.subscribeUnbounded
       .collectFirst { case item: Resp => item }
@@ -91,6 +90,27 @@ class IBSocketClientCats[F[_]: Async: Console](
       .compile
       .lastOrError
   } yield resp
+
+  private def fetchResponsesWithEndType[
+      Req: Encoder,
+      Resp <: ResponseMsg: ClassTag,
+      RespEnd <: ResponseMsg: ClassTag
+  ](
+      request: Req,
+      endInstance: RespEnd
+  ): Stream[F, Resp] =
+    Stream.eval(socket.write(Chunk.array(encode[Req](request)))) >> Stream
+      .eval(msgTopicDeferred.get)
+      .flatMap(_.subscribeUnbounded)
+      .through(
+          _.filter {
+            case item: Resp       => true
+            case endItem: RespEnd => true
+            case _                => false
+          }
+          .takeWhile(_ != endInstance).map(_.asInstanceOf[Resp])
+          .evalTap(item => Console[F].println(s"fetched msg:$item"))
+      )
 
   private def fireAndForget[Req: Encoder](
       request: Req
@@ -164,6 +184,14 @@ class IBSocketClientCats[F[_]: Async: Console](
   override def setServerLogLevel(level: Int): F[Unit] =
     fireAndForget[SetServerLogLevel](
       SetServerLogLevel(loglevel = level)
+    )
+
+  override def reqPositions(): Stream[F,Position] =
+    fetchResponsesWithEndType[ReqPositions,Position, PositionEnd.type](ReqPositions(),PositionEnd)
+
+  override def cancelPositions(): F[Unit] =
+    fireAndForget[CancelPositions](
+      CancelPositions()
     )
 
   override def reqManagedAccts(): F[ManagedAccounts] =
