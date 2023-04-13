@@ -15,22 +15,22 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers {
 
   override def sharedResource: Resource[IO, Res] = IBSocketClientCats.make[IO]()
 
-//  test("ibclient can request for current time") { ibclient =>
-//    for {
-//      now <- IO.realTimeInstant
-//      serverTime <- ibclient.reqCurrentTime()
-//    } yield {
-//      expect(serverTime.time <= now.getEpochSecond)
-//    }
-//  }
-//
-//  test("ibclient can request family codes") { ibclient =>
-//    for {
-//      familycodes <- ibclient.reqFamilyCodes()
-//    } yield {
-//      expect(familycodes.familyCodes.isEmpty)
-//    }
-//  }
+  test("ibclient can request for current time") { ibclient =>
+    for {
+      now <- IO.realTimeInstant
+      serverTime <- ibclient.reqCurrentTime()
+    } yield {
+      expect(serverTime.time <= now.getEpochSecond)
+    }
+  }
+
+  test("ibclient can request family codes") { ibclient =>
+    for {
+      familycodes <- ibclient.reqFamilyCodes()
+    } yield {
+      expect(familycodes.familyCodes.isEmpty)
+    }
+  }
 //
 ////  test("ibclient can request reqScannerParameters") { ibclient =>
 ////    for {
@@ -62,7 +62,7 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers {
       _ <- ibclient.cancelPositions()
     } yield {
 
-      expect(positions.size >=1 )
+      expect(positions.size >= 1)
     }
   }
 //  test("ibclient can request for managed accounts") { ibclient =>
