@@ -239,13 +239,13 @@ object MsgDecoders:
     ): Either[Throwable, DeltaNeutralValidation] =
       partiallyApply(
         entry,
-        { case Array(reqId, conid, delta, price) =>
-          Right(
-            DeltaNeutralValidation(
-              reqId.toInt,
-              DeltaNeutralContract(conid.toInt, delta.toDouble, price.toDouble)
+        { case Array(reqId, rest: _*) =>
+          for
+            reqIdInt <- summon[Decoder[Int]](Array(reqId))
+            deltaNeutralContract <- summon[Decoder[DeltaNeutralContract]](
+              rest.toArray
             )
-          )
+          yield DeltaNeutralValidation(reqIdInt, deltaNeutralContract)
         }
       )
   end given
@@ -281,7 +281,6 @@ object MsgDecoders:
                 sessionsCount,
                 sessions: _*
               ) =>
-            val intDecoder = summon[Decoder[Int]]
             Right(
               HistoricalSchedule(
                 reqId = reqId.toInt,

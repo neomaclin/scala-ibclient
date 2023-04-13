@@ -61,7 +61,8 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers {
       positions <- ibclient.reqPositions().compile.toList
       _ <- ibclient.cancelPositions()
     } yield {
-      expect(positions.nonEmpty)
+
+      expect(positions.size >=1 )
     }
   }
 //  test("ibclient can request for managed accounts") { ibclient =>

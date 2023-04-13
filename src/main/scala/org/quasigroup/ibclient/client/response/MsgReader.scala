@@ -12,7 +12,7 @@ import org.quasigroup.ibclient.client.types.*
 import scala.annotation.tailrec
 object MsgReader:
 
-  def read(msgId: Int, msg: Array[String]): Either[Throwable, ResponseMsg] = {
+  def read(msgId: Int, msg: Array[String]): Either[Throwable, ResponseMsg] =
     msgId match
       case END_CONN =>
         Right(ConnectionClosed)
@@ -190,7 +190,3 @@ object MsgReader:
           )
         )
     end match
-
-  }
-
-end MsgReader

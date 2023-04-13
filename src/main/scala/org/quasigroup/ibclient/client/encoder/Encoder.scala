@@ -4,13 +4,12 @@ import fs2.Chunk
 import scodec.bits.Literals.Utf8
 
 import scala.collection.mutable
-import scala.collection.mutable.Buffer
 import scala.compiletime.summonFrom
 import scala.deriving.Mirror
 
 object Encoder {
 
-  def encode[T: Encoder](raw: T): Array[Byte] = {
+  inline def encode[T: Encoder](raw: T): Array[Byte] = {
     val encoded = summon[Encoder[T]](raw)
     (LengthEncoder(Length(encoded.length)) ++ encoded).toArray
   }
@@ -40,23 +39,23 @@ object Encoder {
 
   import scala.compiletime.{erasedValue, summonInline}
 
-  def encoderSimplySum[T](
+  inline def encoderSimplySum[T](
       s: Mirror.SumOf[T]
   ): Encoder[T] = new Encoder[T]:
-    def apply(t: T): Buffer[Byte] = {
+    def apply(t: T): mutable.Buffer[Byte] = {
       val index = s.ordinal(t) // (2)
       IntEncoder.apply(index)
     }
-  def encoderProduct[T](
+  inline def encoderProduct[T](
       p: Mirror.ProductOf[T],
       encoders: => List[Encoder[_]]
   ): Encoder[T] = new Encoder[T]:
-    def apply(t: T): Buffer[Byte] = {
+    def apply(t: T): mutable.Buffer[Byte] = {
       t.asInstanceOf[Product]
         .productIterator
         .zip(encoders.iterator)
         .map((p, e) => e.asInstanceOf[Encoder[Any]](p))
-        .foldLeft(Buffer.empty)(_ ++ _)
+        .foldLeft(mutable.Buffer.empty)(_ ++ _)
     }
   inline def summonAll[T <: Tuple]: List[Encoder[_]] =
     inline erasedValue[T] match
@@ -72,9 +71,9 @@ object Encoder {
 }
 
 trait Encoder[A] { self =>
-  def apply(a: A): Buffer[Byte]
+  def apply(a: A): mutable.Buffer[Byte]
 
   final def contramap[B](f: B => A): Encoder[B] = new Encoder[B] {
-    final def apply(a: B): Buffer[Byte] = self(f(a))
+    final def apply(a: B): mutable.Buffer[Byte] = self(f(a))
   }
 }

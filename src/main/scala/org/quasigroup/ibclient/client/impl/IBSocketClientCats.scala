@@ -51,7 +51,7 @@ class IBSocketClientCats[F[_]: Async: Console](
             .evalTap(strs => Console[F].println(strs.mkString("[", ",", "]")))
             .evalMap(Decoder.decodeMsg(_).liftTo[F])
             .evalTap(Console[F].println)
-            .takeWhile(_ != ConnectionClosed)
+            .takeThrough(_ != ConnectionClosed)
             .evalTap(msgQueue.offer)
         )
         .through(msgTopic.publish)
@@ -63,9 +63,9 @@ class IBSocketClientCats[F[_]: Async: Console](
     yield ()
 
   private val ibFramesString: StreamDecoder[Array[String]] =
-    StreamDecoder
-      .many(int32)
-      .flatMap(msgSize =>
+    for
+      msgSize <- StreamDecoder.many(int32)
+      rawMessage <-
         if msgSize <= MAX_MSG_LENGTH then
           StreamDecoder.once(
             bytes(msgSize).map(_.decodeUtf8Lenient.split(0.toChar))
@@ -76,7 +76,7 @@ class IBSocketClientCats[F[_]: Async: Console](
               "message size is too large: " + msgSize
             )
           )
-      )
+    yield rawMessage
 
   private def fetchSingleResponse[Req: Encoder, Resp <: ResponseMsg: ClassTag](
       request: Req
@@ -91,27 +91,22 @@ class IBSocketClientCats[F[_]: Async: Console](
         .lastOrError
     yield resp
 
-  private def fetchResponsesWithEndType[
-      Req: Encoder,
-      Resp <: ResponseMsg: ClassTag,
-      RespEnd <: ResponseMsg: ClassTag
-  ](
-      request: Req,
-      endInstance: RespEnd
+  private def fetchResponses[Req: Encoder, Resp <: ResponseMsg: ClassTag](
+      request: Req
   ): Stream[F, Resp] =
-    Stream.eval(socket.write(Chunk.array(encode[Req](request)))) >> Stream
-      .eval(msgTopicDeferred.get)
-      .flatMap(_.subscribeUnbounded)
-      .through(
-        _.filter {
-          case item: Resp       => true
-          case endItem: RespEnd => true
-          case _                => false
-        }
-          .takeWhile(_ != endInstance)
-          .map(_.asInstanceOf[Resp])
-          .evalTap(item => Console[F].println(s"fetched msg:$item"))
+    for
+      _ <- Stream.eval(
+        socket.write(Chunk.array(encode[Req](request)))
       )
+      topic <- Stream.eval(msgTopicDeferred.get)
+      position <- topic.subscribeUnbounded
+        .dropWhile {
+          case item: Resp => false
+          case _          => true
+        }
+        .collectWhile { case item: Resp => item }
+        .evalTap(item => Console[F].println(s"fetched msg:$item"))
+    yield position
 
   private def fireAndForget[Req: Encoder](
       request: Req
@@ -183,10 +178,7 @@ class IBSocketClientCats[F[_]: Async: Console](
     )
 
   override def reqPositions(): Stream[F, Position] =
-    fetchResponsesWithEndType[ReqPositions, Position, PositionEnd.type](
-      ReqPositions(),
-      PositionEnd
-    )
+    fetchResponses[ReqPositions, Position](ReqPositions())
 
   override def cancelPositions(): F[Unit] =
     fireAndForget[CancelPositions](
