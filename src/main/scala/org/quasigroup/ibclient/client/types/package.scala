@@ -249,7 +249,7 @@ enum MktDataType:
 
 final case class DepthMktDataDescription(
     exchange: String,
-    secType: String,
+    secType: SecType,
     listingExch: String,
     serviceDataType: String,
     aggGroup: Int
@@ -400,7 +400,7 @@ final case class ExecutionFilter(
     acctCode: String,
     time: String,
     symbol: String,
-    secType: String,
+    secType: SecType,
     exchange: String,
     side: String
 )

@@ -4,10 +4,16 @@ import org.quasigroup.ibclient.client.types.*
 import org.quasigroup.ibclient.core.Bar
 
 enum ResponseMsg:
-  case TickPrice(tickerId: Int, field: Int, price: Double, canAutoExecute: Int)
-      extends ResponseMsg
+  case TickPrice(
+      tickerId: Int,
+      priceTickType: TickType,
+      price: Double,
+      attribs: TickAttrib,
+      tickSize: Option[TickSize]
+  ) extends ResponseMsg
 
-  case TickSize(tickerId: Int, field: Int, size: Int) extends ResponseMsg
+  case TickSize(tickerId: Int, sizeTickType: TickType, size: Decimal)
+      extends ResponseMsg
 
   case TickOptionComputation(
       tickerId: Int,
@@ -22,15 +28,15 @@ enum ResponseMsg:
       undPrice: Double
   ) extends ResponseMsg
 
-  case TickGeneric(tickerId: Int, tickType: Int, value: Double)
+  case TickGeneric(tickerId: Int, tickType: TickType, value: Double)
       extends ResponseMsg
 
-  case TickString(tickerId: Int, tickType: Int, value: String)
+  case TickString(tickerId: Int, tickType: TickType, value: String)
       extends ResponseMsg
 
   case TickEFP(
       tickerId: Int,
-      tickType: Int,
+      tickType: TickType,
       basisPoInts: Double,
       formattedBasisPoInts: String,
       impliedFuture: Double,
@@ -122,7 +128,7 @@ enum ResponseMsg:
 
   case UpdateNewsBulletin(
       msgId: Int,
-      msgType: Int,
+      msgType: NewsType,
       message: String,
       origExchange: String
   ) extends ResponseMsg
@@ -171,9 +177,11 @@ enum ResponseMsg:
 
   case TickSnapshotEnd(reqId: Int) extends ResponseMsg
 
-  case MarketDataType(reqId: Int, marketDataType: Int) extends ResponseMsg
+  case MarketDataType(reqId: Int, marketDataType: MktDataType)
+      extends ResponseMsg
 
-  case CommissionReportMsg(commissionReport: CommissionReport) extends ResponseMsg
+  case CommissionReportMsg(commissionReport: CommissionReport)
+      extends ResponseMsg
 
   case Position(
       account: String,

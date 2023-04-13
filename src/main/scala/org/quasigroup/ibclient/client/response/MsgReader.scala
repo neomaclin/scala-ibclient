@@ -16,8 +16,8 @@ object MsgReader:
     msgId match
       case END_CONN =>
         Right(ConnectionClosed)
-      // case TICK_PRICE =>
-      //    Decoder.decode[TickPrice](msg)
+      case TICK_PRICE =>
+        Decoder.decode[TickPrice](msg)
       case TICK_SIZE =>
         Decoder.decode[TickSize](msg.tail)
       case POSITION =>

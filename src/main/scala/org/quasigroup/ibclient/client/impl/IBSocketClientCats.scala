@@ -103,12 +103,13 @@ class IBSocketClientCats[F[_]: Async: Console](
       .eval(msgTopicDeferred.get)
       .flatMap(_.subscribeUnbounded)
       .through(
-          _.filter {
-            case item: Resp       => true
-            case endItem: RespEnd => true
-            case _                => false
-          }
-          .takeWhile(_ != endInstance).map(_.asInstanceOf[Resp])
+        _.filter {
+          case item: Resp       => true
+          case endItem: RespEnd => true
+          case _                => false
+        }
+          .takeWhile(_ != endInstance)
+          .map(_.asInstanceOf[Resp])
           .evalTap(item => Console[F].println(s"fetched msg:$item"))
       )
 
@@ -186,8 +187,11 @@ class IBSocketClientCats[F[_]: Async: Console](
       SetServerLogLevel(loglevel = level)
     )
 
-  override def reqPositions(): Stream[F,Position] =
-    fetchResponsesWithEndType[ReqPositions,Position, PositionEnd.type](ReqPositions(),PositionEnd)
+  override def reqPositions(): Stream[F, Position] =
+    fetchResponsesWithEndType[ReqPositions, Position, PositionEnd.type](
+      ReqPositions(),
+      PositionEnd
+    )
 
   override def cancelPositions(): F[Unit] =
     fireAndForget[CancelPositions](
