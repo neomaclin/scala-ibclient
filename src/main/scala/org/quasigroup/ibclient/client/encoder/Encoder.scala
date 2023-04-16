@@ -6,11 +6,11 @@ import scodec.bits.Literals.Utf8
 import scala.collection.mutable
 import scala.compiletime.summonFrom
 import scala.deriving.Mirror
+import scala.compiletime.{erasedValue, summonInline}
 
-object Encoder {
+object Encoder:
 
-  inline def encode[T: Encoder](raw: T): Array[Byte] = {
-    val encoded = summon[Encoder[T]](raw)
+  inline def prependingLength(encoded: mutable.Buffer[Byte]): Array[Byte] =
     val length = encoded.length
     (Array(
       (0xff & (length >> 24)).toByte,
@@ -18,7 +18,9 @@ object Encoder {
       (0xff & (length >> 8)).toByte,
       (0xff & length).toByte
     ).toBuffer ++ encoded).toArray
-  }
+
+  inline def encode[T: Encoder](raw: T): Array[Byte] =
+    prependingLength(summon[Encoder[T]](raw))
 
   inline given Encoder[String] = _.getBytes.toBuffer.+=(0)
 
@@ -31,8 +33,6 @@ object Encoder {
 
   inline given Encoder[Double] = summon[Encoder[String]].contramap(_.toString)
 
-  import scala.compiletime.{erasedValue, summonInline}
-
   inline def encoderSimplySum[T](
       s: Mirror.SumOf[T]
   ): Encoder[T] = new Encoder[T]:
@@ -40,6 +40,7 @@ object Encoder {
       val index = s.ordinal(t) // (2)
       summon[Encoder[Int]](index)
     }
+
   inline def encoderProduct[T](
       p: Mirror.ProductOf[T],
       encoders: => List[Encoder[_]]
@@ -51,6 +52,7 @@ object Encoder {
         .map((p, e) => e.asInstanceOf[Encoder[Any]](p))
         .foldLeft(mutable.Buffer.empty)(_ ++ _)
     }
+
   inline def summonAll[T <: Tuple]: List[Encoder[_]] =
     inline erasedValue[T] match
       case _: EmptyTuple => Nil
@@ -62,7 +64,12 @@ object Encoder {
       case s: Mirror.SumOf[T]     => encoderSimplySum(s)
       case p: Mirror.ProductOf[T] => encoderProduct(p, encoders)
 
-}
+  inline given encodelist[T](using encoder: Encoder[T]): Encoder[List[T]] =
+    new Encoder[List[T]]:
+      def apply(t: List[T]): mutable.Buffer[Byte] =
+        t.foldLeft(mutable.Buffer.empty)(_ ++ encoder(_))
+
+end Encoder
 
 trait Encoder[A] { self =>
   def apply(a: A): mutable.Buffer[Byte]

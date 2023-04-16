@@ -13,6 +13,42 @@ enum RequestMsg:
 
   case ReqFamilyCodes(msgId: Int = REQ_FAMILY_CODES) extends RequestMsg
 
+  case ReqMatchingSymbols(
+      msgId: Int = REQ_MATCHING_SYMBOLS,
+      reqId: Int,
+      pattern: String
+  ) extends RequestMsg
+
+  case ReqMktDepthExchanges(msgId: Int = REQ_MKT_DEPTH_EXCHANGES)
+      extends RequestMsg
+
+  case ReqreqSmartComponents(
+      msgId: Int = REQ_SMART_COMPONENTS,
+      reqId: Int,
+      bboExchange: String
+  ) extends RequestMsg
+
+  case ReqNewsArticle(
+      msgId: Int = REQ_NEWS_ARTICLE,
+      requestId: Int,
+      providerCode: String,
+      articleId: String,
+      newsArticleOptions: List[TagValue]
+  ) extends RequestMsg
+
+  case ReqNewsProviders(msgId: Int = REQ_NEWS_PROVIDERS) extends RequestMsg
+
+  case ReqHistoricalNews(
+      msgId: Int = REQ_HISTORICAL_NEWS,
+      requestId: Int,
+      conId: Int,
+      providerCodes: String,
+      startDateTime: String,
+      endDateTime: String,
+      totalResults: Int,
+      historicalNewsOptions: List[TagValue]
+  ) extends RequestMsg
+
   case ReqScannerSubscription(
       msgId: Int = REQ_SCANNER_SUBSCRIPTION,
       version: Int = 4,
@@ -34,6 +70,7 @@ enum RequestMsg:
       contract: Contract,
       genericTickList: String,
       snapshot: Boolean,
+      regulatorySnapshot: Boolean,
       mktDataOptions: List[TagValue]
   ) extends RequestMsg
 
@@ -54,6 +91,7 @@ enum RequestMsg:
       whatToShow: String,
       useRTH: Int,
       formatDate: Int,
+      keepUpToDate: Boolean,
       chartOptions: List[TagValue]
   ) extends RequestMsg
 
@@ -98,6 +136,7 @@ enum RequestMsg:
       tickerId: Int,
       contract: Contract,
       numRows: Int,
+      isSmartDepth: Boolean,
       mktDepthOptions: List[TagValue]
   ) extends RequestMsg
 
@@ -143,6 +182,26 @@ enum RequestMsg:
       account: String,
       modelCode: String,
       ledgerAndNLV: Boolean
+  ) extends RequestMsg
+
+  case CancelAccountUpdatesMulit(
+      msgId: Int = CANCEL_ACCOUNT_UPDATES_MULTI,
+      version: Int = 1,
+      reqId: Int
+  ) extends RequestMsg
+
+  case ReqSecDefOptParams(
+      msgId: Int = REQ_SEC_DEF_OPT_PARAMS,
+      reqId: Int,
+      underlyingSymbol: String,
+      futFopExchange: String,
+      underlyingSecType: String,
+      underlyingConId: Int
+  ) extends RequestMsg
+
+  case ReqSoftDollarTiers(
+      msgId: Int = REQ_SOFT_DOLLAR_TIERS,
+      reqId: Int
   ) extends RequestMsg
 
   case ReqExecutions(
@@ -207,7 +266,8 @@ enum RequestMsg:
       version: Int = 1,
       reqId: Int,
       contract: Contract,
-      reportType: String
+      reportType: String,
+      fundamentalDataOptions: List[TagValue]
   ) extends RequestMsg
 
   case CancelFundamentalData(
@@ -222,7 +282,8 @@ enum RequestMsg:
       reqId: Int,
       contract: Contract,
       optionPrice: Double,
-      underPrice: Double
+      underPrice: Double,
+      impliedVolatilityOptions: List[TagValue]
   ) extends RequestMsg
 
   case CancelCalculateImpliedVolatility(
@@ -237,7 +298,8 @@ enum RequestMsg:
       reqId: Int,
       contract: Contract,
       volatility: Double,
-      underPrice: Double
+      underPrice: Double,
+      optionPriceOptions: List[TagValue]
   ) extends RequestMsg
 
   case CancelCalculateOptionPrice(
@@ -260,9 +322,23 @@ enum RequestMsg:
       version: Int = 1
   ) extends RequestMsg
 
+  case ReqPositionsMulti(
+      msgId: Int = REQ_POSITIONS_MULTI,
+      version: Int = 1,
+      reqId: Int,
+      account: String,
+      modelCode: String
+  ) extends RequestMsg
+
   case CancelPositions(
       msgId: Int = CANCEL_POSITIONS,
       version: Int = 1
+  ) extends RequestMsg
+
+  case CancelPositionsMulti(
+      msgId: Int = CANCEL_POSITIONS_MULTI,
+      version: Int = 1,
+      reqId: Int
   ) extends RequestMsg
 
   case ReqAccountSummary(
@@ -384,7 +460,7 @@ enum RequestMsg:
       msgId: Int = REQ_TICK_BY_TICK_DATA,
       reqId: Int,
       contract: Contract,
-      tickType: String,
+      tickType: TickType,
       numberOfTicks: Int,
       ignoreSize: Boolean
   ) extends RequestMsg

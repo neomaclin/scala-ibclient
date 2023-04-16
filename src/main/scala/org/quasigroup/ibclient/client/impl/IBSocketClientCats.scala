@@ -17,8 +17,9 @@ import org.quasigroup.ibclient.client.encoder.Encoder
 import org.quasigroup.ibclient.client.encoder.Encoder.{*, given}
 import org.quasigroup.ibclient.client.exceptions.InvalidMessageLengthException
 import org.quasigroup.ibclient.client.request.RequestMsg.*
-import org.quasigroup.ibclient.client.response.{MsgDecoders, ResponseMsg}
+import org.quasigroup.ibclient.client.response.ResponseMsg
 import org.quasigroup.ibclient.client.response.ResponseMsg.*
+import org.quasigroup.ibclient.client.response.MsgDecoders.given
 import org.quasigroup.ibclient.client.types.ConnectionAck
 import scodec.Err.General
 import scodec.bits.*
@@ -49,7 +50,7 @@ class IBSocketClientCats[F[_]: Async: Console](
           socket.reads
             .through(ibFramesString.toPipeByte)
             .evalTap(strs => Console[F].println(strs.mkString("[", ",", "]")))
-            .evalMap(MsgDecoders.decode(_).liftTo[F])
+            .evalMap(Decoder.decode[ResponseMsg](_).liftTo[F])
             .evalTap(Console[F].println)
             .takeThrough(_ != ConnectionClosed)
             .evalTap(msgQueue.offer)

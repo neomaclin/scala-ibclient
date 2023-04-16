@@ -16,7 +16,7 @@ enum ResponseMsg:
 
   case TickOptionComputation(
       tickerId: Int,
-      field: Int,
+      tickType: TickType,
       impliedVol: Double,
       delta: Double,
       optPrice: Double,
@@ -137,8 +137,9 @@ enum ResponseMsg:
   case ReceiveFA(faDataType: Int, xml: String) extends ResponseMsg
 
   case HistoricalData(
-      reqId: Int,
-      bar: Bar
+      histories: List[HistoricalDataUpdate],
+      startDate: String,
+      endDate: String
   ) extends ResponseMsg
 
   case ScannerParameters(xml: String) extends ResponseMsg
@@ -272,9 +273,6 @@ enum ResponseMsg:
       reqId: Int,
       contractDescriptions: List[ContractDescription]
   ) extends ResponseMsg
-
-  case HistoricalDataEnd(reqId: Int, startDateStr: String, endDateStr: String)
-      extends ResponseMsg
 
   case MktDepthExchanges(
       depthMktDataDescriptions: List[DepthMktDataDescription]

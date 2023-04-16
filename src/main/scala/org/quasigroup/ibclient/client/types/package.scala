@@ -23,11 +23,11 @@ final case class TagValue(tag: String, value: String)
 final case class ComboLeg(
     conId: Int,
     ratio: Int,
-    action: Nothing,
-    exchange: Nothing,
+    action: Action,
+    exchange: String,
     openClose: Int,
     shortSaleSlot: Int,
-    designatedLocation: Nothing,
+    designatedLocation: String,
     exemptCode: Int
 )
 
@@ -37,7 +37,7 @@ final case class Contract(
     secType: SecType,
     lastTradeDateOrContractMonth: String,
     strike: Double,
-    right: String,
+    right: ContractRight,
     multiplier: String,
     exchange: String,
     currency: String,
@@ -47,7 +47,9 @@ final case class Contract(
     primaryExch: String = "",
     includeExpired: Boolean = false,
     secIdType: SecIdType = SecIdType.Ignored,
-    secId: String = ""
+    secId: String = "",
+    issuerId: String = "",
+    deltaNeutralContract: Option[DeltaNeutralContract] = None
 )
 
 final case class ContractDetails(
@@ -166,6 +168,15 @@ enum HedgeType:
 
 enum ContractRight:
   case Ignored, Put, Call
+
+object ContractRight:
+  def fromString(str: String) =
+    str.headOption
+      .collect {
+        case 'P' => Put
+        case 'C' => Call
+      }
+      .getOrElse(Ignored)
 
 enum VolatilityType:
   case Ignored, Daily, Annual
@@ -693,14 +704,14 @@ final case class TradeId(private val id: String) {
 }
 
 final case class Bar(
+    count: Int,
     time: String,
-    high: Double,
-    low: Double,
     open: Double,
     close: Double,
+    high: Double,
+    low: Double,
     wap: Decimal,
-    volume: Decimal,
-    count: Int
+    volume: Decimal
 )
 
 final case class Alias(account: String, alias: String)
