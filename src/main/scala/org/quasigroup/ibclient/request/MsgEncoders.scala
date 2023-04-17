@@ -1,14 +1,34 @@
-package org.quasigroup.ibclient.client.request
+package org.quasigroup.ibclient.request
 
-import org.quasigroup.ibclient.client.types.*
-
-import org.quasigroup.ibclient.client.types.TypesCodec.given
-import org.quasigroup.ibclient.client.encoder.Encoder
-import org.quasigroup.ibclient.client.encoder.Encoder.{*, given}
 import RequestMsg.*
-import scala.collection.mutable
+import org.quasigroup.ibclient.IBClient
+import org.quasigroup.ibclient.types.*
+import org.quasigroup.ibclient.types.TypesCodec.given
+import org.quasigroup.ibclient.encoder.Encoder
+import org.quasigroup.ibclient.encoder.Encoder.given
 
+import cats.MonadThrow
+import cats.syntax.try_.*
+import scala.collection.mutable
+import scala.util.Try
 object MsgEncoders {
+
+  inline def prependingLength(encoded: mutable.Buffer[Byte]): Array[Byte] =
+    val length = encoded.length
+    (Array(
+      (0xff & (length >> 24)).toByte,
+      (0xff & (length >> 16)).toByte,
+      (0xff & (length >> 8)).toByte,
+      (0xff & length).toByte
+    ).toBuffer ++ encoded).toArray
+
+  inline def encode[F[_]: MonadThrow, T: Encoder](raw: T)(using
+      serverVersion: IBClient.ServerVersion
+  ): F[Array[Byte]] =
+    Try(unsafeEncode(raw)).liftTo[F]
+
+  inline def unsafeEncode[T: Encoder](raw: T): Array[Byte] =
+    prependingLength(summon[Encoder[T]](raw))
 
   inline given Encoder[ReqHistoricalData] with
     override def apply(a: ReqHistoricalData): mutable.Buffer[Byte] =
@@ -250,4 +270,19 @@ object MsgEncoders {
         ++ summon[Encoder[String]](a.account)
         ++ summon[Encoder[Int]](a.`override`)
   end given
+}
+
+trait MsgEncoder[A] extends Encoder[A] { self =>
+
+  final def apply(a: A): mutable.Buffer[Byte] =
+    this(a)(using IBClient.MAX_VERSION)
+  def apply(a: A)(using
+      serverVersion: IBClient.ServerVersion
+  ): mutable.Buffer[Byte]
+
+  override def contramap[B](f: B => A): Encoder[B] = new MsgEncoder[B] {
+    final def apply(a: B)(using
+        serverVersion: IBClient.ServerVersion
+    ): mutable.Buffer[Byte] = self(f(a))(using serverVersion)
+  }
 }

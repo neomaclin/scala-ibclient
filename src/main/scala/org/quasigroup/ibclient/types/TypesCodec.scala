@@ -1,9 +1,9 @@
-package org.quasigroup.ibclient.client.types
+package org.quasigroup.ibclient.types
 
-import org.quasigroup.ibclient.client.encoder.Encoder
-import org.quasigroup.ibclient.client.encoder.Encoder.{*, given}
-import org.quasigroup.ibclient.client.decoder.Decoder
-import org.quasigroup.ibclient.client.decoder.Decoder.{*, given}
+import org.quasigroup.ibclient.encoder.Encoder.{*, given}
+import org.quasigroup.ibclient.decoder.Decoder.{*, given}
+import org.quasigroup.ibclient.decoder.Decoder
+import org.quasigroup.ibclient.encoder.Encoder
 import scala.collection.mutable
 
 object TypesCodec:

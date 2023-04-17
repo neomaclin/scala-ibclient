@@ -1,13 +1,14 @@
-package org.quasigroup.ibclient.client.response
+package org.quasigroup.ibclient.response
 
 import MsgId.*
-import org.quasigroup.ibclient.client.types.*
-import org.quasigroup.ibclient.client.decoder.Decoder
-import org.quasigroup.ibclient.client.decoder.Decoder.*
-import org.quasigroup.ibclient.client.response.ResponseMsg.*
-import cats.syntax.option.*
-import org.quasigroup.ibclient.client.exceptions.EClientErrors
+import org.quasigroup.ibclient.exceptions.EClientErrors
+import org.quasigroup.ibclient.types.*
 
+import org.quasigroup.ibclient.decoder.Decoder
+import org.quasigroup.ibclient.decoder.Decoder.*
+import org.quasigroup.ibclient.response.ResponseMsg.*
+
+import cats.syntax.option.*
 import scala.annotation.tailrec
 import scala.util.Right
 import scala.util.Try

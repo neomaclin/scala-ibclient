@@ -3,8 +3,7 @@ package org.quasigroup.ibclient
 import cats.effect.kernel.Resource
 import cats.effect.{Clock, IO, SyncIO}
 import org.quasigroup.ibclient.IBSocketClientCatsSuite.expect
-import org.quasigroup.ibclient.client.IBClient
-import org.quasigroup.ibclient.client.impl.IBSocketClientCats
+import org.quasigroup.ibclient.impl.IBSocketClientCats
 import org.scalacheck.Gen
 import weaver.IOSuite
 import weaver.scalacheck.*

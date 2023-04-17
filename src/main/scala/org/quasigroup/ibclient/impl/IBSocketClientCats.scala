@@ -1,6 +1,17 @@
-package org.quasigroup.ibclient.client.impl
+package org.quasigroup.ibclient.impl
 
-import cats.Applicative
+import org.quasigroup.ibclient.IBClient
+import org.quasigroup.ibclient.IBClient.*
+import org.quasigroup.ibclient.encoder.Encoder
+import org.quasigroup.ibclient.encoder.Encoder.{*, given}
+import org.quasigroup.ibclient.decoder.Decoder
+import org.quasigroup.ibclient.exceptions.InvalidMessageLengthException
+import org.quasigroup.ibclient.request.{MsgEncoders, RequestMsg}
+import org.quasigroup.ibclient.request.RequestMsg.*
+import org.quasigroup.ibclient.response.ResponseMsg
+import org.quasigroup.ibclient.response.ResponseMsg.*
+import org.quasigroup.ibclient.response.MsgDecoders.given
+
 import cats.effect.*
 import cats.effect.std.{Console, Queue}
 import cats.effect.syntax.all.*
@@ -10,17 +21,6 @@ import fs2.*
 import fs2.concurrent.*
 import fs2.interop.scodec.StreamDecoder
 import fs2.io.net.*
-import org.quasigroup.ibclient.client.IBClient
-import org.quasigroup.ibclient.client.IBClient.*
-import org.quasigroup.ibclient.client.decoder.Decoder
-import org.quasigroup.ibclient.client.encoder.Encoder
-import org.quasigroup.ibclient.client.encoder.Encoder.{*, given}
-import org.quasigroup.ibclient.client.exceptions.InvalidMessageLengthException
-import org.quasigroup.ibclient.client.request.RequestMsg.*
-import org.quasigroup.ibclient.client.response.ResponseMsg
-import org.quasigroup.ibclient.client.response.ResponseMsg.*
-import org.quasigroup.ibclient.client.response.MsgDecoders.given
-import org.quasigroup.ibclient.client.types.ConnectionAck
 import scodec.Err.General
 import scodec.bits.*
 import scodec.codecs.*
@@ -38,7 +38,7 @@ class IBSocketClientCats[F[_]: Async: Console](
   private val msgPullingFiberDeferred =
     Deferred.unsafe[F, Fiber[F, Throwable, Unit]]
   private val _clientId = Deferred.unsafe[F, Int]
-  private val _serverVersion = Deferred.unsafe[F, Int]
+  private val _serverVersion = Deferred.unsafe[F, IBClient.ServerVersion]
 
   private def startMsgConsumption: F[Unit] =
     for
@@ -79,11 +79,14 @@ class IBSocketClientCats[F[_]: Async: Console](
           )
     yield rawMessage
 
-  private def fetchSingleResponse[Req: Encoder, Resp <: ResponseMsg: ClassTag](
+  private def fetchSingleResponse[
+      Req <: RequestMsg: Encoder,
+      Resp <: ResponseMsg: ClassTag
+  ](
       request: Req
   ): F[Resp] =
     for
-      _ <- socket.write(Chunk.array(encode[Req](request)))
+      _ <- requestOnly(request)
       msgStream <- msgTopicDeferred.get
       resp <- msgStream.subscribeUnbounded
         .collectFirst { case item: Resp => item }
@@ -92,13 +95,14 @@ class IBSocketClientCats[F[_]: Async: Console](
         .lastOrError
     yield resp
 
-  private def fetchResponses[Req: Encoder, Resp <: ResponseMsg: ClassTag](
+  private def fetchResponses[
+      Req <: RequestMsg: Encoder,
+      Resp <: ResponseMsg: ClassTag
+  ](
       request: Req
   ): Stream[F, Resp] =
     for
-      _ <- Stream.eval(
-        socket.write(Chunk.array(encode[Req](request)))
-      )
+      _ <- Stream.eval(requestOnly(request))
       topic <- Stream.eval(msgTopicDeferred.get)
       position <- topic.subscribeUnbounded
         .dropWhile {
@@ -109,13 +113,18 @@ class IBSocketClientCats[F[_]: Async: Console](
         .evalTap(item => Console[F].println(s"fetched msg:$item"))
     yield position
 
-  private def fireAndForget[Req: Encoder](
+  def requestOnly[Req <: RequestMsg: Encoder](
       request: Req
-  ): F[Unit] = socket.write(Chunk.array(encode[Req](request)))
+  ): F[Unit] =
+    for
+      given ServerVersion <- _serverVersion.get
+      bytes <- MsgEncoders.encode[F, Req](request)
+      _ <- socket.write(Chunk.array(bytes))
+    yield ()
 
   private def eConnect(clientId: Int): F[ConnectionAck] =
     for
-      encoded <- ("API\u0000".getBytes ++ encode[String](
+      encoded <- ("API\u0000".getBytes ++ MsgEncoders.unsafeEncode[String](
         buildVersionString(MIN_VERSION, MAX_VERSION)
       )).pure
       _ <- socket.write(Chunk.array(encoded))
@@ -142,7 +151,7 @@ class IBSocketClientCats[F[_]: Async: Console](
       _ <- startAPI
     yield resp
 
-  private def eDisconnect(): F[Unit] =
+  private def eDisconnect: F[Unit] =
     for
       _ <- msgPullingFiberDeferred.get.flatMap(_.cancel)
       _ <- Console[F].println("Msg pull stopped")
@@ -151,42 +160,41 @@ class IBSocketClientCats[F[_]: Async: Console](
   private def startAPI: F[Unit] =
     for
       clientId <- _clientId.get
-      encoded <- encode[StartAPI](
+      _ <- requestOnly[StartAPI](
         StartAPI(
           clientId = clientId,
           optionalCapabilities = optionalCapabilities.getOrElse("")
         )
-      ).pure
-      _ <- socket.write(Chunk.array(encoded))
+      )
       _ <- Console[F].println("Start msg pulling")
       _ <- startMsgConsumption
     yield ()
 
-  override def reqFamilyCodes(): F[FamilyCodes] =
+  override def reqFamilyCodes: F[FamilyCodes] =
     fetchSingleResponse[ReqFamilyCodes, FamilyCodes](ReqFamilyCodes())
 
-  override def reqCurrentTime(): F[CurrentTime] =
+  override def reqCurrentTime: F[CurrentTime] =
     fetchSingleResponse[ReqCurrentTime, CurrentTime](ReqCurrentTime())
 
-  override def reqScannerParameters(): F[ScannerParameters] =
+  override def reqScannerParameters: F[ScannerParameters] =
     fetchSingleResponse[ReqScannerParameters, ScannerParameters](
       ReqScannerParameters()
     )
 
   override def setServerLogLevel(level: Int): F[Unit] =
-    fireAndForget[SetServerLogLevel](
+    requestOnly[SetServerLogLevel](
       SetServerLogLevel(loglevel = level)
     )
 
-  override def reqPositions(): Stream[F, PositionMsg] =
+  override def reqPositions: Stream[F, PositionMsg] =
     fetchResponses[ReqPositions, PositionMsg](ReqPositions())
 
-  override def cancelPositions(): F[Unit] =
-    fireAndForget[CancelPositions](
+  override def cancelPositions: F[Unit] =
+    requestOnly[CancelPositions](
       CancelPositions()
     )
 
-  override def reqManagedAccts(): F[ManagedAccounts] =
+  override def reqManagedAccts: F[ManagedAccounts] =
     fetchSingleResponse[ReqManagedAccts, ManagedAccounts](ReqManagedAccts())
 
   override def requestFA(faDataType: Int): F[ReceiveFA] =
@@ -197,13 +205,18 @@ class IBSocketClientCats[F[_]: Async: Console](
 end IBSocketClientCats
 
 object IBSocketClientCats:
-  given Decoder[ConnectionAck] with
+  final case class ConnectionAck(
+      serverVersion: IBClient.ServerVersion,
+      time: String
+  )
+
+  private given Decoder[ConnectionAck] with
     override def apply(
         entry: Array[String]
     ): Either[Throwable, ConnectionAck] =
       entry match
         case Array(version, timestamp) =>
-          Right(ConnectionAck(version.toInt, timestamp))
+          Right(ConnectionAck(IBClient.ServerVersion(version.toInt), timestamp))
         case _ => Left(RuntimeException("wrong response"))
   end given
 
@@ -219,7 +232,7 @@ object IBSocketClientCats:
         .client(SocketAddress(host, port))
         .map(new IBSocketClientCats[F](_, optionalCapabilities))
         .evalTap(_.eConnect(clientId))
-      _ <- Resource.onFinalize(client.eDisconnect())
+      _ <- Resource.onFinalize(client.eDisconnect)
     yield client
 
 end IBSocketClientCats

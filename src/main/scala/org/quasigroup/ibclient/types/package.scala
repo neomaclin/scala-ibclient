@@ -1,8 +1,4 @@
-package org.quasigroup.ibclient.client.types
-
-import cats.data.State
-
-import scala.math.BigDecimal
+package org.quasigroup.ibclient.types
 
 final case class BitMask(mask: Int) {
   def clear: BitMask = BitMask(0)
@@ -682,7 +678,6 @@ final case class PriceIncrement(lowEdge: Double, increment: Double)
 
 enum UsePriceMgmtAlgo:
   case Default, NotUse, Use
-final case class ConnectionAck(serverVersion: Int, time: String)
 
 object Profile:
   enum Type:

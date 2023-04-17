@@ -1,6 +1,6 @@
-package org.quasigroup.ibclient.client.request
+package org.quasigroup.ibclient.request
 
-object MsgId:
+private object MsgId:
   val REQ_MKT_DATA = 1
   val CANCEL_MKT_DATA = 2
   val PLACE_ORDER = 3

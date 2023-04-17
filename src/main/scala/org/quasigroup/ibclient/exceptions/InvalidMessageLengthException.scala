@@ -1,4 +1,4 @@
-package org.quasigroup.ibclient.client.exceptions
+package org.quasigroup.ibclient.exceptions
 
 import java.io.IOException
 

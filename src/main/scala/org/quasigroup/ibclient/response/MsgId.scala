@@ -1,6 +1,6 @@
-package org.quasigroup.ibclient.client.response
+package org.quasigroup.ibclient.response
 
-object MsgId:
+private object MsgId:
   // incoming msg id's
   val END_CONN = -1
   val TICK_PRICE = 1

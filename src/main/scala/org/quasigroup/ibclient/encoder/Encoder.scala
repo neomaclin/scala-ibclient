@@ -1,4 +1,4 @@
-package org.quasigroup.ibclient.client.encoder
+package org.quasigroup.ibclient.encoder
 
 import fs2.Chunk
 import scodec.bits.Literals.Utf8
@@ -9,18 +9,6 @@ import scala.deriving.Mirror
 import scala.compiletime.{erasedValue, summonInline}
 
 object Encoder:
-
-  inline def prependingLength(encoded: mutable.Buffer[Byte]): Array[Byte] =
-    val length = encoded.length
-    (Array(
-      (0xff & (length >> 24)).toByte,
-      (0xff & (length >> 16)).toByte,
-      (0xff & (length >> 8)).toByte,
-      (0xff & length).toByte
-    ).toBuffer ++ encoded).toArray
-
-  inline def encode[T: Encoder](raw: T): Array[Byte] =
-    prependingLength(summon[Encoder[T]](raw))
 
   inline given Encoder[String] = _.getBytes.toBuffer.+=(0)
 
@@ -74,7 +62,5 @@ end Encoder
 trait Encoder[A] { self =>
   def apply(a: A): mutable.Buffer[Byte]
 
-  final def contramap[B](f: B => A): Encoder[B] = new Encoder[B] {
-    final def apply(a: B): mutable.Buffer[Byte] = self(f(a))
-  }
+  def contramap[B](f: B => A): Encoder[B] = (a: B) => self(f(a))
 }

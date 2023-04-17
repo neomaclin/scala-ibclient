@@ -1,4 +1,4 @@
-package org.quasigroup.ibclient.client.types
+package org.quasigroup.ibclient.types
 
 import java.math.MathContext
 import java.text.DecimalFormat

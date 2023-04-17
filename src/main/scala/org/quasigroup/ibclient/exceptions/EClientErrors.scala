@@ -1,4 +1,4 @@
-package org.quasigroup.ibclient.client.exceptions
+package org.quasigroup.ibclient.exceptions
 
 object EClientErrors {
   final case class CodeMsgPair(code: Int, msg: String)

@@ -1,7 +1,7 @@
-package org.quasigroup.ibclient.client.decoder
+package org.quasigroup.ibclient.decoder
 
-import org.quasigroup.ibclient.client.response.ResponseMsg
-import org.quasigroup.ibclient.client.types.Decimal
+import org.quasigroup.ibclient.response.ResponseMsg
+import org.quasigroup.ibclient.types.Decimal
 
 import scala.compiletime.summonFrom
 import scala.deriving.Mirror

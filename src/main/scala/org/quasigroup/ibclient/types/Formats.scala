@@ -1,4 +1,4 @@
-package org.quasigroup.ibclient.client.types
+package org.quasigroup.ibclient.types
 
 object Formats:
   private val FMT2 = "#,##0.00"

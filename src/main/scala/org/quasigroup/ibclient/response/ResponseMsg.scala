@@ -1,6 +1,6 @@
-package org.quasigroup.ibclient.client.response
+package org.quasigroup.ibclient.response
 
-import org.quasigroup.ibclient.client.types.*
+import org.quasigroup.ibclient.types.*
 
 enum ResponseMsg:
   case TickPrice(
@@ -216,10 +216,6 @@ enum ResponseMsg:
   case DisplayGroupList(reqId: Int, groups: String) extends ResponseMsg
 
   case DisplayGroupUpdated(reqId: Int, contractInfo: String) extends ResponseMsg
-
-  case Error(e: Exception) extends ResponseMsg
-
-  case ErrorStr(str: String) extends ResponseMsg
 
   case ErrorDetail(
       id: Int,
