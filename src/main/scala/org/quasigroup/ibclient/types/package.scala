@@ -33,12 +33,12 @@ final case class Contract(
     secType: SecType,
     lastTradeDateOrContractMonth: String,
     strike: Double,
-    right: ContractRight,
-    multiplier: String,
-    exchange: String,
-    currency: String,
-    localSymbol: String,
-    tradingClass: String,
+    right: ContractRight = ContractRight.Ignored,
+    multiplier: String = "",
+    exchange: String = "",
+    currency: String = "",
+    localSymbol: String = "",
+    tradingClass: String = "",
     comboLegs: List[ComboLeg] = Nil,
     primaryExch: String = "",
     includeExpired: Boolean = false,
@@ -84,77 +84,79 @@ enum ComboParam:
 end ComboParam
 
 enum AlgoParam:
-  case StartTime, EndTime, AllowPastEndTime, MaxPctVol, PctVol, StrategyType,
-    NoTakeLiq, RiskAversion, ForceCompletion, DisplaySize, GetDone,
-    NoTradeAhead, UseOddLots,
-    ComponentSize, TimeBetweenOrders, RandomizeTime20, RandomizeSize55,
-    GiveUp, CatchUp, WaitForFill
+  case startTime, endTime, allowPastEndTime, maxPctVol, pctVol, strategyType,
+    noTakeLiq, riskAversion, forceCompletion, displaySize, getDone,
+    noTradeAhead, useOddLots,
+    componentSize, timeBetweenOrders, randomizeTime20, randomizeSize55, giveUp,
+    catchUp, waitForFill, activeTimeStart, activeTimeEnd
 end AlgoParam
 
+import AlgoParam.*
 enum AlgoStrategy(val params: List[AlgoParam]):
+
   case Ignored extends AlgoStrategy(Nil)
   case Vwap
       extends AlgoStrategy(
         List(
-          AlgoParam.StartTime,
-          AlgoParam.EndTime,
-          AlgoParam.MaxPctVol,
-          AlgoParam.NoTakeLiq,
-          AlgoParam.GetDone,
-          AlgoParam.NoTradeAhead,
-          AlgoParam.UseOddLots
+          startTime,
+          endTime,
+          maxPctVol,
+          noTakeLiq,
+          getDone,
+          noTradeAhead,
+          useOddLots
         )
       )
   case Twap
       extends AlgoStrategy(
         List(
-          AlgoParam.StartTime,
-          AlgoParam.EndTime,
-          AlgoParam.AllowPastEndTime,
-          AlgoParam.StrategyType
+          startTime,
+          endTime,
+          allowPastEndTime,
+          strategyType
         )
       )
   case ArrivalPx
       extends AlgoStrategy(
         List(
-          AlgoParam.StartTime,
-          AlgoParam.EndTime,
-          AlgoParam.AllowPastEndTime,
-          AlgoParam.MaxPctVol,
-          AlgoParam.RiskAversion,
-          AlgoParam.ForceCompletion
+          startTime,
+          endTime,
+          allowPastEndTime,
+          maxPctVol,
+          riskAversion,
+          forceCompletion
         )
       )
   case DarkIce
       extends AlgoStrategy(
         List(
-          AlgoParam.StartTime,
-          AlgoParam.EndTime,
-          AlgoParam.AllowPastEndTime,
-          AlgoParam.DisplaySize
+          startTime,
+          endTime,
+          allowPastEndTime,
+          displaySize
         )
       )
   case PctVol
       extends AlgoStrategy(
         List(
-          AlgoParam.StartTime,
-          AlgoParam.EndTime,
-          AlgoParam.PctVol,
-          AlgoParam.NoTakeLiq
+          startTime,
+          endTime,
+          pctVol,
+          noTakeLiq
         )
       )
   case AD
       extends AlgoStrategy(
         List(
-          AlgoParam.StartTime,
-          AlgoParam.EndTime,
-          AlgoParam.ComponentSize,
-          AlgoParam.TimeBetweenOrders,
-          AlgoParam.RandomizeTime20,
-          AlgoParam.RandomizeSize55,
-          AlgoParam.GiveUp,
-          AlgoParam.CatchUp,
-          AlgoParam.WaitForFill
+          activeTimeStart,
+          activeTimeEnd,
+          componentSize,
+          timeBetweenOrders,
+          randomizeTime20,
+          randomizeSize55,
+          giveUp,
+          catchUp,
+          waitForFill
         )
       )
 end AlgoStrategy
@@ -255,6 +257,9 @@ end SecType
 enum MktDataType:
   case Unknown, Realtime, Frozen, Delayed, DelayedFrozen
 
+enum AuctionStrategy:
+  case Ignored, AUCTION_MATCH, AUCTION_IMPROVEMENT, AUCTION_TRANSPARENT
+
 final case class DepthMktDataDescription(
     exchange: String,
     secType: SecType,
@@ -265,7 +270,7 @@ final case class DepthMktDataDescription(
 enum Method:
   case Ignored, EqualQuantity, AvailableEquity, NetLiq, PctChange
 
-enum TickType(index: Int, field: String):
+enum TickType(val index: Int, field: String):
   case BID_SIZE extends TickType(0, "bidSize")
   case BID extends TickType(1, "bidPrice")
   case ASK extends TickType(2, "askPrice")
@@ -327,9 +332,9 @@ enum TickType(index: Int, field: String):
   case RT_HISTORICAL_VOL extends TickType(58, "RTHistoricalVol")
   case REGULATORY_IMBALANCE extends TickType(61, "regulatoryImbalance")
   case NEWS_TICK extends TickType(62, "newsTick")
-  case SHORT_TERM_VOLUME_3_MIN extends TickType(63, "shortTermVolume3Min")
-  case SHORT_TERM_VOLUME_5_MIN extends TickType(64, "shortTermVolume5Min")
-  case SHORT_TERM_VOLUME_10_MIN extends TickType(65, "shortTermVolume10Min")
+  case SHORT_TERVOLUME_3_MIN extends TickType(63, "shortTermVolume3Min")
+  case SHORT_TERVOLUME_5_MIN extends TickType(64, "shortTermVolume5Min")
+  case SHORT_TERVOLUME_10_MIN extends TickType(65, "shortTermVolume10Min")
   case DELAYED_BID extends TickType(66, "delayedBid")
   case DELAYED_ASK extends TickType(67, "delayedAsk")
   case DELAYED_LAST extends TickType(68, "delayedLast")
@@ -368,7 +373,7 @@ enum TickType(index: Int, field: String):
   case ESTIMATED_IPO_MIDPOINT extends TickType(101, "estimatedIPOMidpoint")
   case FINAL_IPO_LAST extends TickType(102, "finalIPOLast")
 
-  case UNKNOWN extends TickType(Integer.MAX_VALUE, "unknown")
+  case UNKNOWN extends TickType(Int.MaxValue, "unknown")
 
 end TickType
 
@@ -443,100 +448,175 @@ final case class ScannerSubscription(
 )
 
 final case class Order(
-    account: String,
-    settlingFirm: String,
-    clearingAccount: String,
-    clearingIntent: String,
-    action: Action,
-    algoStrategy: AlgoStrategy,
-    algoId: String,
-    allOrIgnored: Boolean,
-    auxPrice: Double,
-    blockOrder: Boolean,
-    clientId: Int,
-    continuousUpdate: Int,
-    delta: Double,
-    deltaNeutralAuxPrice: Double,
-    deltaNeutralConId: Int,
-    deltaNeutralOpenClose: String,
-    deltaNeutralShortSale: Boolean,
-    deltaNeutralShortSaleSlot: Int,
-    deltaNeutralDesignatedLocation: String,
-    deltaNeutralOrderType: Order.Type,
-    discretionaryAmt: Double,
-    displaySize: Int,
-    eTradeOnly: Boolean,
-    faGroup: String,
-    faMethod: Method,
-    faPercentage: String,
-    faProfile: String,
-    firmQuoteOnly: Boolean,
-    goodAfterTime: String,
-    goodTillDate: String,
-    hedgeParam: String,
-    hedgeType: HedgeType,
-    hidden: Boolean,
-    lmtPrice: Double,
-    minQty: Int,
-    nbboPriceCap: Double,
-    notHeld: Boolean,
-    solicited: Boolean,
-    ocaGroup: String,
-    ocaType: OcaType,
-    optOutSmartRouting: Boolean,
-    orderId: Int,
-    orderRef: String,
-    orderType: Order.Type,
-    outsideRth: Boolean,
-    overridePercentageConstraints: Boolean,
-    openClose: String,
-    origin: Int,
-    shortSaleSlot: Int,
-    designatedLocation: String,
-    exemptCode: Int,
-    parentId: Int,
-    percentOffset: Double,
-    permId: Long,
+    // ids
+    clientId: Int = 0,
+    orderId: Int = 0,
+    permId: Int = 0,
+    parentId: Int = 0,
+    // primary attributes
+    action: Action = Action.BUY,
+    totalQuantity: Decimal = Decimal.INVALID,
+    displaySize: Int = 0,
+    orderType: Order.Type = Order.Type.LMT,
+    lmtPrice: Double = Double.MaxValue,
+    auxPrice: Double = Double.MaxValue,
+    tif: TimeInForce = TimeInForce.DAY,
+    // Clearing info
+    account: String = "",
+    settlingFirm: String = "",
+    clearingAccount: String = "",
+    clearingIntent: String = "",
+    // secondary attributes
+    allOrNone: Boolean = false,
+    blockOrder: Boolean = false,
+    hidden: Boolean = false,
+    outsideRth: Boolean = false,
+    sweepToFill: Boolean = false,
+    percentOffset: Double = Double.MaxValue,
+    trailingPercent: Double = Double.MaxValue,
+    trailStopPrice: Double = Double.MaxValue,
+    minQty: Int = Int.MaxValue,
+    goodAfterTime: String, // FORMAT: 20060505 08:00:00 EST
+    goodTillDate: String, // FORMAT: 20060505 08:00:00 EST or 20060505
+    ocaGroup: String = "",
+    orderRef: String = "",
+    rule80A: Rule80A = Rule80A.Ignored,
+    ocaType: OcaType = OcaType.Ignored,
+    triggerMethod: TriggerMethod = TriggerMethod.Default,
+    // extended order fields
+    activeStartTime: String = "", // GTC orders
+    activeStopTime: String = "", // GTC orders
+    // advisor allocation orders
+    faGroup: String = "",
+    faMethod: Method = Method.Ignored,
+    faPercentage: String = "",
+    faProfile: String = "",
+    // volatility orders
+    volatility: Double = Double.MaxValue,
+    volatilityType: VolatilityType = VolatilityType.Ignored,
+    continuousUpdate: Int = 0,
     referencePriceType: ReferencePriceType,
-    rule80A: Rule80A,
-    scaleAutoReset: Boolean,
-    scaleInitFillQty: Int,
-    scaleInitLevelSize: Int,
-    scaleInitPosition: Int,
-    scalePriceAdjustInterval: Int,
-    scalePriceAdjustValue: Double,
-    scalePriceIncrement: Double,
-    scaleProfitOffset: Double,
-    scaleRandomPercent: Boolean,
-    scaleSubsLevelSize: Int,
-    startingPrice: Double,
-    stockRangeLower: Double,
-    stockRangeUpper: Double,
-    stockRefPrice: Double,
-    basisPoints: Double,
-    basisPointsType: Int,
-    sweepToFill: Boolean,
-    tif: TimeInForce,
-    totalQuantity: Int,
-    trailingPercent: Double,
-    trailStopPrice: Double,
-    transmit: Boolean,
-    triggerMethod: TriggerMethod,
-    activeStartTime: String,
-    activeStopTime: String,
-    algoParams: List[TagValue],
-    volatility: Double,
-    volatilityType: VolatilityType,
-    whatIf: Boolean,
-    scaleTable: String,
-    auctionStrategy: Int,
-    orderComboLegs: List[Order.ComboLeg],
-    deltaNeutralSettlingFirm: String,
-    deltaNeutralClearingAccount: String,
-    deltaNeutralClearingIntent: String,
-    smartComboRoutingParams: List[TagValue],
-    orderMiscOptions: List[TagValue]
-)
+    deltaNeutralOrderType: Order.Type = Order.Type.Ignored,
+    deltaNeutralAuxPrice: Double = Double.MaxValue,
+    deltaNeutralConId: Int = 0,
+    deltaNeutralOpenClose: String = "",
+    deltaNeutralShortSale: Boolean = false,
+    deltaNeutralShortSaleSlot: Int = 0,
+    deltaNeutralDesignatedLocation: String = "",
+    // scale orders
+    scaleInitLevelSize: Int = Int.MaxValue,
+    scaleSubsLevelSize: Int = Int.MaxValue,
+    scalePriceIncrement: Double = Double.MaxValue,
+    scalePriceAdjustValue: Double = Double.MaxValue,
+    scalePriceAdjustInterval: Int = Int.MaxValue,
+    scaleProfitOffset: Double = Double.MaxValue,
+    scaleAutoReset: Boolean = false,
+    scaleInitPosition: Int = Int.MaxValue,
+    scaleInitFillQty: Int = Int.MaxValue,
+    scaleRandomPercent: Boolean = false,
+    scaleTable: String = "",
+    // hedge orders
+    hedgeType: HedgeType = HedgeType.Ignored,
+    hedgeParam: String = "",
+    // algo orders
+    algoStrategy: AlgoStrategy = AlgoStrategy.Ignored,
+    algoParams: List[TagValue] = Nil,
+    algoId: String = "",
+    // combo orders
+    smartComboRoutingParams: List[TagValue] = Nil,
+    orderComboLegs: List[Order.ComboLeg] = Nil,
+    // processing control
+    whatIf: Boolean = false,
+    transmit: Boolean =
+      true, // if false, order will be sent to TWS but not transmitted to server
+    overridePercentageConstraints: Boolean = false,
+    // Institutional orders only
+    openClose: String = "O", // O=Open, C=Close
+    origin: Int = Order.CUSTOMER,
+    shortSaleSlot: Int = 0,
+    // 1 if you hold the shares, 2 if they will be delivered from elsewhere.  Only for Action="SSHORT
+    designatedLocation: String = "",
+    exemptCode: Int = -1,
+    deltaNeutralSettlingFirm: String = "",
+    deltaNeutralClearingAccount: String = "",
+    deltaNeutralClearingIntent: String = "",
+    // SMART routing only
+    discretionaryAmt: Double = Double.MaxValue,
+    optOutSmartRouting: Boolean = false,
+    // BOX or VOL ORDERS ONLY
+    auctionStrategy: AuctionStrategy = AuctionStrategy.Ignored,
+    // BOX ORDERS ONLY
+    startingPrice: Double = Double.MaxValue,
+    stockRefPrice: Double = Double.MaxValue,
+    delta: Double = Double.MaxValue,
+    // pegged to stock or VOL orders
+    stockRangeLower: Double = Double.MaxValue,
+    stockRangeUpper: Double = Double.MaxValue,
+    // COMBO ORDERS ONLY
+    basisPoints: Double = Double.MaxValue,
+    basisPointsType: Int = Int.MaxValue,
+    // Not Held
+    notHeld: Boolean = false,
+    // order misc options
+    orderMiscOptions: List[TagValue] = Nil,
+    // order algo id
+    solicited: Boolean = false,
+    randomizeSize: Boolean = false,
+    randomizePrice: Boolean = false,
+    // VER PEG2BENCH fields:
+    referenceContractId: Int = 0,
+    peggedChangeAmount: Double = 0.0,
+    isPeggedChangeAmountDecrease: Boolean = false,
+    referenceChangeAmount: Double = 0.0,
+    referenceExchangeId: String = "",
+    adjustedOrderType: Order.Type = Order.Type.Ignored,
+    triggerPrice: Double = Double.MaxValue,
+    adjustedStopPrice: Double = Double.MaxValue,
+    adjustedStopLimitPrice: Double = Double.MaxValue,
+    adjustedTrailingAmount: Double = Double.MaxValue,
+    adjustableTrailingUnit: Int = 0,
+    lmtPriceOffset: Double = Double.MaxValue,
+    conditions: List[OrderCondition] = Nil,
+    conditionsCancelOrder: Boolean = false,
+    conditionsIgnoreRth: Boolean = false,
+    // VER PEG2BENCH fields ends:
+    // models
+    modelCode: String = "",
+    extOperator: String = "",
+    softDollarTier: SoftDollarTier = new SoftDollarTier("", "", ""),
+    // native cash quantity
+    cashQty: Double = Double.MaxValue,
+    mifid2DecisionMaker: String = "",
+    mifid2DecisionAlgo: String = "",
+    mifid2ExecutionTrader: String = "",
+    mifid2ExecutionAlgo: String = "",
+    // don't use auto price for hedge
+    dontUseAutoPriceForHedge: Boolean = false,
+    isOmsContainer: Boolean = false,
+    discretionaryUpToLimitPrice: Boolean = false,
+    autoCancelDate: String = "",
+    filledQuantity: Decimal = Decimal.INVALID,
+    refFuturesConId: Int = 0,
+    autoCancelParent: Boolean = false,
+    shareholder: String = "",
+    imbalanceOnly: Boolean = false,
+    routeMarketableToBbo: Boolean = false,
+    parentPermId: Long = 0L,
+    usePriceMgmtAlgo: UsePriceMgmtAlgo = UsePriceMgmtAlgo.Ignored,
+    duration: Int = Int.MaxValue,
+    postToAts: Int = Int.MaxValue,
+    advancedErrorOverride: String = "",
+    manualOrderTime: String = "",
+    minTradeQty: Int = Int.MaxValue,
+    minCompeteSize: Int = Int.MaxValue,
+    competeAgainstBestOffset: Double = Double.MaxValue,
+    midOffsetAtWhole: Double = Double.MaxValue,
+    midOffsetAtHalf: Double = Double.MaxValue,
+    allOrIgnored: Boolean = false
+) {
+  def isCompeteAgainstBestOffsetUpToMid: Boolean =
+    competeAgainstBestOffset == Order.COMPETE_AGAINST_BEST_OFFSET_UP_TO_MID
+}
 
 object Order:
   val CUSTOMER = 0
@@ -551,7 +631,7 @@ object Order:
   val AUCTION_MATCH = 1
   val AUCTION_IMPROVEMENT = 2
   val AUCTION_TRANSPARENT = 3
-  val EMPTY_STR = ""
+  val COMPETE_AGAINST_BEST_OFFSET_UP_TO_MID = Double.PositiveInfinity
 
   enum Type(val apiString: String):
     case Ignored extends Type("")
@@ -572,6 +652,7 @@ object Order:
     case MTL extends Type("MTL")
     case PASSV_REL extends Type("PASSV REL")
     case PEG_BENCH extends Type("PEG BENCH")
+    case PEG_BEST extends Type("PEG BEST")
     case PEG_MID extends Type("PEG MID")
     case PEG_MKT extends Type("PEG MKT")
     case PEG_PRIM extends Type("PEG PRIM")
@@ -587,6 +668,10 @@ object Order:
     case VOL extends Type("VOL")
     case VWAP extends Type("VWAP")
     case QUOTE extends Type("QUOTE")
+    case PEG_PRIM_VOL extends Type("PPV")
+    case PEG_MID_VOL extends Type("PDV")
+    case PEG_MKT_VOL extends Type("PMV")
+    case PEG_SRF_VOL extends Type("PSV")
   end Type
 
   final case class ComboLeg(price: Double)
@@ -676,15 +761,17 @@ final case class NewsProvider(providerCode: String, providerName: String)
 
 final case class PriceIncrement(lowEdge: Double, increment: Double)
 
-enum UsePriceMgmtAlgo:
-  case Default, NotUse, Use
+enum UsePriceMgmtAlgo(val value: Int):
+  case Ignored extends UsePriceMgmtAlgo(Int.MaxValue)
+  case NotUse extends UsePriceMgmtAlgo(0)
+  case Use extends UsePriceMgmtAlgo(1)
+end UsePriceMgmtAlgo
 
 object Profile:
   enum Type:
     case NONE, Percents, Ratios, Shares
 
   final case class Allocation(account: String, amount: String)
-
 end Profile
 
 final case class Profile(
@@ -899,7 +986,7 @@ enum AccountSummaryTag:
 
     // misc
     HighestSeverity, // A measure of how close the account is to liquidation
-    DayTradesRemaining, // The Number of Open/Close trades one could do before Pattern Day Trading is detected; a value of "-1" means user can do unlimited day trades.
+    DayTradesRemaining, // The Number of Open/Close trades one could do before Pattern Day Trading is detected, a value of "-1" means user can do unlimited day trades.
     Leverage // GrossPositionValue / NetLiquidation
 end AccountSummaryTag
 
@@ -919,7 +1006,7 @@ final case class Position(
     realPnl: Double
 )
 
-enum OrderConditionType(private val value: Int):
+enum OrderConditionType(val value: Int):
   case Price extends OrderConditionType(1)
   case Time extends OrderConditionType(3)
   case Margin extends OrderConditionType(4)

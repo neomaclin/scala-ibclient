@@ -21,6 +21,9 @@ object MsgDecoders:
   ): Either[Throwable, T] =
     matching.applyOrElse(entry, _ => Left(new Exception("msg format error")))
 
+  inline given Decoder[UpdatePortfolio] =
+    MsgReader.createUpdatePortfolio.runA(_)
+
   inline given Decoder[MktDataType] =
     summon[Decoder[Int]].map(MktDataType.fromOrdinal)
 
@@ -513,6 +516,24 @@ object MsgDecoders:
       )
   end given
 
+  // inline given Decoder[UpdatePortfolio] with
+  //   def apply(
+  //       entry: Array[String]
+  //   ): Either[Throwable, UpdatePortfolio] =
+  //     partiallyApply(
+  //       entry,
+  //       { case Array(version, rest: _*) =>
+  //         val versionInt = version.toInt
+  //         val (conid, remaining) = if versionInt >= 6 then
+  //           (rest.head.toInt, rest.tail)
+  //         else (0, rest)
+  //         val Array(symbol,secType,lastTradeDateOrContractMonth,strike,right, rest2:_*)  = remaining
+  //         if versionInt >= 7 then
+  //         else
+  //       }
+  //     )
+  // end given
+
   inline given Decoder[HistoricalData] with
     @tailrec
     private def buildHistoricalData(
@@ -882,8 +903,8 @@ object MsgDecoders:
               Decoder.decode[OrderStatus](msg)
             case ACCT_VALUE =>
               Decoder.decode[UpdateAccountValue](msg.tail)
-            // case PORTFOLIO_VALUE =>
-            //         Decoder.decode[PortfolioValue](msg)
+            case PORTFOLIO_VALUE =>
+              Decoder.decode[UpdatePortfolio](msg)
             case ACCT_UPDATE_TIME =>
               Decoder.decode[UpdateAccountTime](msg.tail)
             case ERR_MSG =>

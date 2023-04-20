@@ -17,7 +17,7 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers:
   test("ibclient can request for current time") { ibclient =>
     for {
       now <- IO.realTimeInstant
-      serverTime <- ibclient.reqCurrentTime()
+      serverTime <- ibclient.reqCurrentTime
     } yield {
       expect(serverTime.time <= now.getEpochSecond)
     }
@@ -25,7 +25,7 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers:
 
   test("ibclient can request family codes") { ibclient =>
     for {
-      familycodes <- ibclient.reqFamilyCodes()
+      familycodes <- ibclient.reqFamilyCodes
     } yield {
       expect(familycodes.familyCodes.isEmpty)
     }
@@ -42,8 +42,8 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers:
 
   test("ibclient can request positions") { ibclient =>
     for {
-      positions <- ibclient.reqPositions().compile.toList
-      _ <- ibclient.cancelPositions()
+      positions <- ibclient.reqPositions.compile.toList
+      _ <- ibclient.cancelPositions
     } yield {
 
       expect(positions.size >= 1)
@@ -52,7 +52,7 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers:
 
   test("ibclient can request for managed accounts") { ibclient =>
     for {
-      accounts <- ibclient.reqManagedAccts()
+      accounts <- ibclient.reqManagedAccts
     } yield {
       expect(accounts.accountsList.nonEmpty)
     }

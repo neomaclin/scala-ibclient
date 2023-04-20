@@ -11,9 +11,8 @@ import org.quasigroup.ibclient.request.RequestMsg.*
 import org.quasigroup.ibclient.response.ResponseMsg
 import org.quasigroup.ibclient.response.ResponseMsg.*
 import org.quasigroup.ibclient.response.MsgDecoders.given
-
 import cats.effect.*
-import cats.effect.std.{Console, Queue}
+import cats.effect.std.{Backpressure, Console, Mutex, Queue}
 import cats.effect.syntax.all.*
 import cats.syntax.all.*
 import com.comcast.ip4s.*
@@ -21,10 +20,12 @@ import fs2.*
 import fs2.concurrent.*
 import fs2.interop.scodec.StreamDecoder
 import fs2.io.net.*
+import scodec.*
 import scodec.Err.General
 import scodec.bits.*
 import scodec.codecs.*
 
+import scala.concurrent.duration.DurationInt
 import scala.reflect.ClassTag
 
 class IBSocketClientCats[F[_]: Async: Console](
@@ -34,6 +35,9 @@ class IBSocketClientCats[F[_]: Async: Console](
 
   import IBSocketClientCats.{*, given}
 
+  private val requestRateLimiterRef: Ref[F, Int] = Ref.unsafe(50)
+  private val msgPushingFiberDeferred =
+    Deferred.unsafe[F, Fiber[F, Throwable, Unit]]
   private val msgTopicDeferred = Deferred.unsafe[F, Topic[F, ResponseMsg]]
   private val msgPullingFiberDeferred =
     Deferred.unsafe[F, Fiber[F, Throwable, Unit]]
@@ -44,6 +48,13 @@ class IBSocketClientCats[F[_]: Async: Console](
     for
       msgQueue <- Queue.unbounded[F, ResponseMsg]
       msgTopic <- Topic[F, ResponseMsg]
+      pushFiber <-
+        Stream
+          .awakeEvery(1.second)
+          .evalTap(_ => requestRateLimiterRef.set(50))
+          .compile
+          .drain
+          .start
       pullFiber <- Stream
         .fromQueueUnterminated(msgQueue)
         .concurrently(
@@ -60,6 +71,7 @@ class IBSocketClientCats[F[_]: Async: Console](
         .drain
         .start
       _ <- msgPullingFiberDeferred.complete(pullFiber)
+      _ <- msgPushingFiberDeferred.complete(pushFiber)
       _ <- msgTopicDeferred.complete(msgTopic)
     yield ()
 
@@ -119,6 +131,8 @@ class IBSocketClientCats[F[_]: Async: Console](
     for
       given ServerVersion <- _serverVersion.get
       bytes <- MsgEncoders.encode[F, Req](request)
+      _ <- requestRateLimiterRef.get.iterateUntil(_ > 0)
+      _ <- requestRateLimiterRef.update(_ - 1)
       _ <- socket.write(Chunk.array(bytes))
     yield ()
 
@@ -153,6 +167,7 @@ class IBSocketClientCats[F[_]: Async: Console](
 
   private def eDisconnect: F[Unit] =
     for
+      _ <- msgPushingFiberDeferred.get.flatMap(_.cancel)
       _ <- msgPullingFiberDeferred.get.flatMap(_.cancel)
       _ <- Console[F].println("Msg pull stopped")
     yield ()

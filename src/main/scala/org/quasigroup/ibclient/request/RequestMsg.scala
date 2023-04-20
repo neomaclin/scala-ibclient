@@ -1,14 +1,7 @@
 package org.quasigroup.ibclient.request
 
 import MsgId.*
-import org.quasigroup.ibclient.types.{
-  Contract,
-  ExecutionFilter,
-  Order,
-  ScannerSubscription,
-  TagValue,
-  TickType
-}
+import org.quasigroup.ibclient.types.*
 
 enum RequestMsg:
   case StartAPI(
@@ -166,7 +159,6 @@ enum RequestMsg:
 
   case PlaceOrder(
       msgId: Int = PLACE_ORDER,
-      version: Int = 2,
       id: Int,
       contract: Contract,
       order: Order

@@ -12,14 +12,18 @@ object Encoder:
 
   inline given Encoder[String] = _.getBytes.toBuffer.+=(0)
 
-  inline given Encoder[Int] = summon[Encoder[String]].contramap(String.valueOf)
+  inline given Encoder[Int] = summon[Encoder[String]].contramap(int =>
+    if int == Int.MaxValue then "" else String.valueOf(int)
+  )
 
   inline given Encoder[Array[Byte]] = _.toBuffer
 
   inline given Encoder[Boolean] =
     summon[Encoder[Int]].contramap(if _ then 1 else 0)
 
-  inline given Encoder[Double] = summon[Encoder[String]].contramap(_.toString)
+  inline given Encoder[Double] = summon[Encoder[String]].contramap(double =>
+    if double == Double.MaxValue then "" else String.valueOf(double)
+  )
 
   inline def encoderSimplySum[T](
       s: Mirror.SumOf[T]

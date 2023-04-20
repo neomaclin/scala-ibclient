@@ -77,7 +77,7 @@ enum ResponseMsg:
 
   case UpdatePortfolio(
       contract: Contract,
-      position: Int,
+      position: Decimal,
       marketPrice: Double,
       marketValue: Double,
       averageCost: Double,
