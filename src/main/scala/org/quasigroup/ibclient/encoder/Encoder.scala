@@ -1,5 +1,7 @@
 package org.quasigroup.ibclient.encoder
 
+import org.quasigroup.ibclient.types.Decimal
+import org.quasigroup.ibclient.types.value
 import fs2.Chunk
 import scodec.bits.Literals.Utf8
 
@@ -24,6 +26,14 @@ object Encoder:
   inline given Encoder[Double] = summon[Encoder[String]].contramap(double =>
     if double == Double.MaxValue then "" else String.valueOf(double)
   )
+
+  
+  inline given Encoder[Decimal] =
+    summon[Encoder[String]].contramap(decimal =>
+      if decimal == Decimal.INVALID then ""
+      else decimal.value.bigDecimal.stripTrailingZeros.toPlainString
+    )
+
 
   inline def encoderSimplySum[T](
       s: Mirror.SumOf[T]

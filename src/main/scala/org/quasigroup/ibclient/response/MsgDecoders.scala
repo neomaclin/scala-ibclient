@@ -1,8 +1,10 @@
 package org.quasigroup.ibclient.response
 
 import MsgId.*
+import MsgReader.*
 import org.quasigroup.ibclient.exceptions.EClientErrors
 import org.quasigroup.ibclient.types.*
+import org.quasigroup.ibclient.types.TypesCodec.{*, given}
 
 import org.quasigroup.ibclient.decoder.Decoder
 import org.quasigroup.ibclient.decoder.Decoder.*
@@ -21,17 +23,64 @@ object MsgDecoders:
   ): Either[Throwable, T] =
     matching.applyOrElse(entry, _ => Left(new Exception("msg format error")))
 
-  inline given Decoder[UpdatePortfolio] =
-    MsgReader.createUpdatePortfolio.runA(_)
-
-  inline given Decoder[MktDataType] =
-    summon[Decoder[Int]].map(MktDataType.fromOrdinal)
-
-  inline given Decoder[NewsType] =
-    summon[Decoder[Int]].map(NewsType.fromOrdinal)
-
-  inline given Decoder[TickType] =
-    summon[Decoder[Int]].map(TickType.fromOrdinal)
+  inline given Decoder[UpdatePortfolio] with
+    private val createUpdatePortfolio: DecoderState[UpdatePortfolio] =
+      for
+        version <- read[Int]
+        conId <- if version >= 6 then read[Int] else readNothing(0)
+        symbol <- read[String]
+        secType <- read[SecType]
+        lastTradeDateOrContractMonth <- read[String]
+        strike <- read[Double]
+        right <- read[ContractRight]
+        multiplier <-
+          if version >= 7 then read[String] else readNothing("")
+        primaryExch <-
+          if version >= 7 then read[String] else readNothing("")
+        currency <- read[String]
+        localSymbol <-
+          if version >= 2 then read[String] else readNothing("")
+        tradingClass <-
+          if version >= 8 then read[String] else readNothing("")
+        position <- read[Decimal]
+        marketPrice <- read[Double]
+        marketValue <- read[Double]
+        averageCost <-
+          if version >= 3 then read[Double] else readNothing(0.0)
+        unrealizedPNL <-
+          if version >= 3 then read[Double] else readNothing(0.0)
+        realizedPNL <-
+          if version >= 3 then read[Double] else readNothing(0.0)
+        accountName <-
+          if version >= 4 then read[String] else readNothing("")
+      yield
+        val contract = Contract(
+          conId = conId,
+          symbol = symbol,
+          secType = secType,
+          lastTradeDateOrContractMonth = lastTradeDateOrContractMonth,
+          strike = strike,
+          right = right,
+          multiplier = multiplier,
+          primaryExch = primaryExch,
+          currency = currency,
+          localSymbol = localSymbol,
+          tradingClass = tradingClass
+        )
+        UpdatePortfolio(
+          contract,
+          position,
+          marketPrice,
+          marketValue,
+          averageCost,
+          unrealizedPNL,
+          realizedPNL,
+          accountName
+        )
+    override def apply(
+        entry: Array[String]
+    ): Either[Throwable, UpdatePortfolio] =
+      createUpdatePortfolio.runA(entry)
 
   inline given Decoder[TickPrice] with
     def apply(
@@ -181,106 +230,91 @@ object MsgDecoders:
   end given
 
   inline given Decoder[PositionMsg] with
-    def apply(
-        entry: Array[String]
-    ): Either[Throwable, PositionMsg] =
-      partiallyApply(
-        entry,
-        {
-          case Array(
-                version,
-                account,
-                conid,
-                symbol,
-                secType,
-                lastTradeDateOrContractMonth,
-                strike,
-                right,
-                multiplier,
-                exchange,
-                currency,
-                localSymbol,
-                rest: _*
-              ) =>
-            val versionInt = version.toInt
-            val (tradingClass, nextRest) =
-              if versionInt >= 2 then (rest.head, rest.tail) else ("", rest)
-            val pos =
-              Decimal.parse(nextRest.head).toOption.getOrElse(Decimal.INVALID)
-            val avgCost =
-              if versionInt >= 3 then nextRest.tail.head.toDouble else 0
-            val contract = Contract(
-              conid.toInt,
-              symbol,
-              SecType.valueOf(secType),
-              lastTradeDateOrContractMonth,
-              strike.toDouble,
-              ContractRight.fromString(right),
-              multiplier,
-              exchange,
-              currency,
-              localSymbol,
-              tradingClass
-            )
-            Right(PositionMsg(account, contract, pos, avgCost))
-        }
+    private val createPositionMsg: DecoderState[PositionMsg] =
+      for
+        version <- read[Int]
+        account <- read[String]
+        conId <- read[Int]
+        symbol <- read[String]
+        secType <- read[SecType]
+        lastTradeDateOrContractMonth <- read[String]
+        strike <- read[Double]
+        right <- read[ContractRight]
+        multiplier <- read[String]
+        exchange <- read[String]
+        currency <- read[String]
+        localSymbol <- read[String]
+        tradingClass <-
+          if version >= 2 then read[String] else readNothing("")
+        pos <- read[Decimal]
+        avgCost <- if version >= 3 then read[Double] else readNothing(0.0)
+      yield PositionMsg(
+        account,
+        Contract(
+          conId,
+          symbol,
+          secType,
+          lastTradeDateOrContractMonth,
+          strike,
+          right,
+          multiplier,
+          exchange,
+          currency,
+          localSymbol,
+          tradingClass
+        ),
+        pos,
+        avgCost
       )
 
+    override def apply(
+        entry: Array[String]
+    ): Either[Throwable, PositionMsg] = createPositionMsg.runA(entry)
   end given
 
   inline given Decoder[PositionMulti] with
-    def apply(
-        entry: Array[String]
-    ): Either[Throwable, PositionMulti] =
-      partiallyApply(
-        entry,
-        {
-          case Array(
-                reqId,
-                account,
-                conid,
-                symbol,
-                secType,
-                lastTradeDateOrContractMonth,
-                strike,
-                right,
-                multiplier,
-                exchange,
-                currency,
-                localSymbol,
-                tradingClass,
-                pos,
-                avgCost,
-                modelCode
-              ) =>
-            val posDecimal =
-              Decimal.parse(pos).toOption.getOrElse(Decimal.INVALID)
-            val contract = Contract(
-              conid.toInt,
-              symbol,
-              SecType.valueOf(secType),
-              lastTradeDateOrContractMonth,
-              strike.toDouble,
-              ContractRight.fromString(right),
-              multiplier,
-              exchange,
-              currency,
-              localSymbol,
-              tradingClass
-            )
-            Right(
-              PositionMulti(
-                reqId.toInt,
-                account,
-                modelCode,
-                contract,
-                posDecimal,
-                avgCost.toDouble
-              )
-            )
-        }
+    private val createPositionMulti: DecoderState[PositionMulti] =
+      for
+        reqId <- read[Int]
+        account <- read[String]
+        conId <- read[Int]
+        symbol <- read[String]
+        secType <- read[SecType]
+        lastTradeDateOrContractMonth <- read[String]
+        strike <- read[Double]
+        right <- read[ContractRight]
+        multiplier <- read[String]
+        exchange <- read[String]
+        currency <- read[String]
+        localSymbol <- read[String]
+        tradingClass <- read[String]
+        pos <- read[Decimal]
+        avgCost <- read[Double]
+        modelCode <- read[String]
+      yield PositionMulti(
+        reqId,
+        account,
+        modelCode,
+        Contract(
+          conId,
+          symbol,
+          secType,
+          lastTradeDateOrContractMonth,
+          strike,
+          right,
+          multiplier,
+          exchange,
+          currency,
+          localSymbol,
+          tradingClass
+        ),
+        pos,
+        avgCost
       )
 
+    override def apply(
+        entry: Array[String]
+    ): Either[Throwable, PositionMulti] = createPositionMulti.runA(entry)
   end given
 
   inline given Decoder[SecurityDefinitionOptionalParameter] with
@@ -327,32 +361,28 @@ object MsgDecoders:
   end given
 
   inline given Decoder[VerifyCompleted] with
-    def apply(
+    private val createVerifyCompleted: DecoderState[VerifyCompleted] =
+      for
+        isSuccessfulStr <- read[String]
+        errorText <- read[String]
+      yield VerifyCompleted("true" == isSuccessfulStr, errorText)
+
+    override def apply(
         entry: Array[String]
-    ): Either[Throwable, VerifyCompleted] =
-      partiallyApply(
-        entry,
-        { case Array(isSuccessfulStr, errorText) =>
-          Right(VerifyCompleted("true" == isSuccessfulStr, errorText))
-        }
-      )
+    ): Either[Throwable, VerifyCompleted] = createVerifyCompleted.runA(entry)
+
   end given
 
   inline given Decoder[DeltaNeutralValidation] with
+    private val createDeltaNeutralValidation: DecoderState[DeltaNeutralValidation] =
+      for
+        reqId <- read[Int]
+        deltaNeutralContract <- read[DeltaNeutralContract]
+      yield DeltaNeutralValidation(reqId, deltaNeutralContract)
+
     def apply(
         entry: Array[String]
-    ): Either[Throwable, DeltaNeutralValidation] =
-      partiallyApply(
-        entry,
-        { case Array(reqId, rest: _*) =>
-          for
-            reqIdInt <- summon[Decoder[Int]](Array(reqId))
-            deltaNeutralContract <- summon[Decoder[DeltaNeutralContract]](
-              rest.toArray
-            )
-          yield DeltaNeutralValidation(reqIdInt, deltaNeutralContract)
-        }
-      )
+    ): Either[Throwable, DeltaNeutralValidation] = createDeltaNeutralValidation.runA(entry)
   end given
 
   inline given Decoder[HistoricalTicks] with
@@ -516,358 +546,252 @@ object MsgDecoders:
       )
   end given
 
-  // inline given Decoder[UpdatePortfolio] with
-  //   def apply(
-  //       entry: Array[String]
-  //   ): Either[Throwable, UpdatePortfolio] =
-  //     partiallyApply(
-  //       entry,
-  //       { case Array(version, rest: _*) =>
-  //         val versionInt = version.toInt
-  //         val (conid, remaining) = if versionInt >= 6 then
-  //           (rest.head.toInt, rest.tail)
-  //         else (0, rest)
-  //         val Array(symbol,secType,lastTradeDateOrContractMonth,strike,right, rest2:_*)  = remaining
-  //         if versionInt >= 7 then
-  //         else
-  //       }
-  //     )
-  // end given
-
   inline given Decoder[HistoricalData] with
-    @tailrec
-    private def buildHistoricalData(
-        reqId: Int,
-        version: Int,
-        entry: List[String],
-        acc: List[HistoricalDataUpdate]
-    ): List[HistoricalDataUpdate] =
-      entry match
-        case date :: open :: high :: low :: close :: volume :: wap :: xs =>
-          buildHistoricalData(
-            reqId,
-            version,
-            if version >= 3 then xs.tail else xs,
-            HistoricalDataUpdate(
+    private val createHistoricalData: DecoderState[HistoricalData] =
+      for
+        version <- read[Int]
+        reqId <- read[Int]
+        startDate <- if (version >= 2) then read[String] else readNothing("")
+        endDate <- if (version >= 2) then read[String] else readNothing("")
+        itemCount <- read[Int]
+        histories <-
+          (0 until itemCount).foldLeft(
+            readNothing(List.empty[HistoricalDataUpdate])
+          ) { (state, idx) =>
+            for
+              list <- state
+              date <- read[String]
+              open <- read[Double]
+              high <- read[Double]
+              low <- read[Double]
+              close <- read[Double]
+              volume <- read[Decimal]
+              wap <- read[Decimal]
+              barCount <- if version >= 3 then read[Int] else readNothing(-1)
+            yield HistoricalDataUpdate(
               reqId,
               Bar(
-                count = if version >= 3 then xs.head.toInt else -1,
                 time = date,
-                open = open.toDouble,
-                close = close.toDouble,
-                high = high.toDouble,
-                low = low.toDouble,
-                wap = Decimal.parse(wap).getOrElse(Decimal.INVALID),
-                volume = Decimal.parse(volume).getOrElse(Decimal.INVALID)
+                open = open,
+                high = high,
+                low = low,
+                close = close,
+                volume = volume,
+                count = barCount,
+                wap = wap
               )
-            ) :: acc
-          )
-        case _ => acc.reverse
-
-      end match
-    def apply(
+            ) :: list
+          }
+      yield HistoricalData(histories.reverse, startDate, endDate)
+    override def apply(
         entry: Array[String]
     ): Either[Throwable, HistoricalData] =
-      partiallyApply(
-        entry,
-        { case Array(version, reqId, rest: _*) =>
-          val versionInt = version.toInt
-          val (startDate, endDate, data) =
-            if (versionInt >= 2) then
-              rest.toArray match
-                case Array(star, end, remaining: _*) =>
-                  (star, end, remaining)
-                case _ => ("", "", rest)
-            else ("", "", rest)
-          Right(
-            HistoricalData(
-              buildHistoricalData(
-                reqId.toInt,
-                versionInt,
-                data.toList.tail,
-                Nil
-              ),
-              startDate,
-              endDate
-            )
-          )
-        }
-      )
+      createHistoricalData.runA(entry)
   end given
 
   inline given Decoder[HistoricalSchedule] with
+    private val createHistoricalSchedule: DecoderState[HistoricalSchedule] =
+      for
+        reqId <- read[Int]
+        startDateTime <- read[String]
+        endDateTime <- read[String]
+        timeZone <- read[String]
+        sessionsCount <- read[Int]
+        sessions <-
+          (0 until sessionsCount).foldLeft(
+            readNothing(List.empty[HistoricalSession])
+          ) { (state, idx) =>
+            for
+              list <- state
+              sessionStartDateTime <- read[String]
+              sessionEndDateTime <- read[String]
+              sessionRefDateTime <- read[String]
+            yield HistoricalSession(
+              sessionStartDateTime,
+              sessionEndDateTime,
+              sessionRefDateTime
+            ) :: list
+          }
+      yield HistoricalSchedule(
+        reqId,
+        startDateTime,
+        endDateTime,
+        timeZone,
+        sessions.reverse
+      )
 
-    @tailrec
-    private def buildHistoricalSessions(
-        entry: List[String],
-        acc: List[HistoricalSession]
-    ): List[HistoricalSession] =
-      entry match
-        case startDateTime :: endDateTime :: refDate :: xs =>
-          buildHistoricalSessions(
-            xs,
-            HistoricalSession(startDateTime, endDateTime, refDate) :: acc
-          )
-        case _ => acc.reverse
-
-      end match
-
-    def apply(
+    override def apply(
         entry: Array[String]
     ): Either[Throwable, HistoricalSchedule] =
-      partiallyApply(
-        entry,
-        {
-          case Array(
-                reqId,
-                startDateTime,
-                endDateTime,
-                timeZone,
-                sessionsCount,
-                sessions: _*
-              ) =>
-            Right(
-              HistoricalSchedule(
-                reqId = reqId.toInt,
-                startDateTime = startDateTime,
-                endDateTime = endDateTime,
-                timeZone = timeZone,
-                sessions = buildHistoricalSessions(sessions.toList, Nil)
-              )
-            )
-        }
-      )
+      createHistoricalSchedule.runA(entry)
   end given
 
   inline given Decoder[HistogramData] with
+    private val createHistogramData: DecoderState[HistogramData] =
+      for
+        reqId <- read[Int]
+        nEntries <- read[Int]
+        entries <-
+          (0 until nEntries).foldLeft(
+            readNothing(List.empty[HistogramEntry])
+          ) { (state, idx) =>
+            for
+              list <- state
+              price <- read[Double]
+              size <- read[Decimal]
+            yield HistogramEntry(price, size) :: list
+          }
+      yield HistogramData(reqId, entries.reverse)
 
-    @tailrec
-    private def buildHistogramEntries(
-        entry: List[String],
-        acc: List[HistogramEntry]
-    ): List[HistogramEntry] =
-      entry match
-        case price :: size :: xs =>
-          buildHistogramEntries(
-            xs,
-            HistogramEntry(
-              price.toDouble,
-              Decimal.parse(size).getOrElse(Decimal.INVALID)
-            ) :: acc
-          )
-        case _ => acc.reverse
-
-      end match
-
-    def apply(
+    override def apply(
         entry: Array[String]
-    ): Either[Throwable, HistogramData] =
-      partiallyApply(
-        entry,
-        {
-          case Array(
-                reqId,
-                size,
-                entries: _*
-              ) =>
-            Right(
-              HistogramData(
-                reqId = reqId.toInt,
-                items = buildHistogramEntries(entries.toList, Nil)
-              )
-            )
-        }
-      )
+    ): Either[Throwable, HistogramData] = createHistogramData.runA(entry)
+
   end given
 
-  inline given Decoder[FamilyCodes] = new Decoder[FamilyCodes]:
-    @tailrec
-    private def buildFamilyCodes(
-        entry: List[String],
-        acc: List[FamilyCode]
-    ): List[FamilyCode] =
-      entry match
-        case Nil      => acc.reverse
-        case _ :: Nil => Nil
-        case accountID :: familyCodeStr :: xs =>
-          buildFamilyCodes(xs, FamilyCode(accountID, familyCodeStr) :: acc)
-      end match
+  inline given Decoder[FamilyCodes] with
+    private val createFamilyCodes: DecoderState[FamilyCodes] =
+      for
+        numberOfFamilyCode <- read[Int]
+        familyCodes <-
+          if numberOfFamilyCode == 1 then readNothing(List.empty[FamilyCode])
+          else
+            (0 until numberOfFamilyCode).foldLeft(
+              readNothing(List.empty[FamilyCode])
+            ) { (state, idx) =>
+              for
+                list <- state
+                accountID <- read[String]
+                familyCodeStr <- read[String]
+              yield FamilyCode(accountID, familyCodeStr) :: list
+            }
+      yield FamilyCodes(familyCodes.reverse)
 
-    override def apply(entry: Array[String]): Either[Throwable, FamilyCodes] =
-      partiallyApply(
-        entry,
-        { case Array(numberOfFamilyCode, rest: _*) =>
-          if numberOfFamilyCode == "1" then Right(FamilyCodes(Nil))
-          else Right(FamilyCodes(buildFamilyCodes(rest.toList, Nil)))
-        }
-      )
+    override def apply(
+        entry: Array[String]
+    ): Either[Throwable, FamilyCodes] = createFamilyCodes.runA(entry)
 
   end given
 
   inline given Decoder[SmartComponents] with
+    private val createSmartComponents: DecoderState[SmartComponents] =
+      for
+        reqId <- read[Int]
+        size <- read[Int]
+        smartComponents <-
+          (0 until size).foldLeft(
+            readNothing(Map.empty[Int, (String, Char)])
+          ) { (state, idx) =>
+            for
+              maps <- state
+              bitNumber <- read[Int]
+              exchange <- read[String]
+              exchangeLetter <- read[String]
+            yield maps + (bitNumber.toInt -> (exchange -> exchangeLetter.head))
+          }
+      yield SmartComponents(reqId, smartComponents)
 
-    @tailrec
-    private def buildSmartComponents(
-        entry: List[String],
-        acc: Map[Int, (String, Char)]
-    ): Map[Int, (String, Char)] =
-      entry match
-        case bitNumber :: exchange :: exchangeLetter :: xs =>
-          buildSmartComponents(
-            xs,
-            acc + (bitNumber.toInt -> (exchange -> exchangeLetter.head))
-          )
-        case _ => acc
-      end match
-
-    def apply(
+    override def apply(
         entry: Array[String]
-    ): Either[Throwable, SmartComponents] =
-      partiallyApply(
-        entry,
-        {
-          case Array(
-                reqId,
-                size,
-                rest: _*
-              ) =>
-            val intDecoder = summon[Decoder[Int]]
-            Right(
-              SmartComponents(
-                reqId = reqId.toInt,
-                theMap = buildSmartComponents(rest.toList, Map.empty)
-              )
-            )
-        }
-      )
+    ): Either[Throwable, SmartComponents] = createSmartComponents.runA(entry)
+
   end given
 
-  inline given Decoder[MktDepthExchanges] = new Decoder[MktDepthExchanges]:
-    @tailrec
-    private def buildMktDepthExchanges(
-        entry: List[String],
-        acc: List[DepthMktDataDescription]
-    ): List[DepthMktDataDescription] =
-      entry match
-        case exchange :: secType :: listingExch :: serviceDataType :: aggGroup :: xs =>
-          buildMktDepthExchanges(
-            xs,
-            DepthMktDataDescription(
+  inline given Decoder[MktDepthExchanges] with
+    private val createMktDepthExchanges: DecoderState[MktDepthExchanges] =
+      for
+        nDepthMktDataDescriptions <- read[Int]
+        depthMktDataDescriptions <-
+          (0 until nDepthMktDataDescriptions).foldLeft(
+            readNothing(List.empty[DepthMktDataDescription])
+          ) { (state, idx) =>
+            for
+              list <- state
+              exchange <- read[String]
+              secType <- read[SecType]
+              listingExch <- read[String]
+              serviceDataType <- read[String]
+              aggGroup <- read[Int]
+            yield DepthMktDataDescription(
               exchange,
-              SecType.valueOf(secType),
+              secType,
               listingExch,
               serviceDataType,
-              aggGroup.toInt
-            ) :: acc
-          )
-        case _ => acc.reverse
-      end match
+              aggGroup
+            ) :: list
+          }
+      yield MktDepthExchanges(depthMktDataDescriptions.reverse)
 
     override def apply(
         entry: Array[String]
     ): Either[Throwable, MktDepthExchanges] =
-      partiallyApply(
-        entry,
-        { case Array(nDepthMktDataDescriptions, rest: _*) =>
-          Right(MktDepthExchanges(buildMktDepthExchanges(rest.toList, Nil)))
-        }
-      )
+      createMktDepthExchanges.runA(entry)
 
   end given
 
-  inline given Decoder[NewsProviders] = new Decoder[NewsProviders]:
-    @tailrec
-    private def buildNewsProviders(
-        entry: List[String],
-        acc: List[NewsProvider]
-    ): List[NewsProvider] =
-      entry match
-        case providerCode :: providerName :: xs =>
-          buildNewsProviders(
-            xs,
-            NewsProvider(
-              providerCode,
-              providerName
-            ) :: acc
-          )
-        case _ => acc.reverse
-      end match
+  inline given Decoder[NewsProviders] with
+    private val createNewsProviders: DecoderState[NewsProviders] =
+      for
+        nNewsProviders <- read[Int]
+        newsProviders <-
+          (0 until nNewsProviders).foldLeft(
+            readNothing(List.empty[NewsProvider])
+          ) { (state, idx) =>
+            for
+              list <- state
+              providerCode <- read[String]
+              providerName <- read[String]
+            yield NewsProvider(providerCode, providerName) :: list
+          }
+      yield NewsProviders(newsProviders.reverse)
 
-    override def apply(
-        entry: Array[String]
-    ): Either[Throwable, NewsProviders] =
-      partiallyApply(
-        entry,
-        { case Array(nNewsProviders, rest: _*) =>
-          Right(NewsProviders(buildNewsProviders(rest.toList, Nil)))
-        }
-      )
+    override def apply(entry: Array[String]): Either[Throwable, NewsProviders] =
+      createNewsProviders.runA(entry)
 
   end given
 
-  inline given Decoder[SoftDollarTiers] = new Decoder[SoftDollarTiers]:
-    @tailrec
-    private def buildSoftDollarTiers(
-        entry: List[String],
-        acc: List[SoftDollarTier]
-    ): List[SoftDollarTier] =
-      entry match
-        case name :: value :: displayName :: xs =>
-          buildSoftDollarTiers(
-            xs,
-            SoftDollarTier(
-              name,
-              value,
-              displayName
-            ) :: acc
-          )
-        case _ => acc.reverse
-      end match
+  inline given Decoder[SoftDollarTiers] with
+    private val createSoftDollarTiers: DecoderState[SoftDollarTiers] =
+      for
+        reqId <- read[Int]
+        nTiers <- read[Int]
+        tiers <-
+          (0 until nTiers).foldLeft(readNothing(List.empty[SoftDollarTier])) {
+            (state, idx) =>
+              for
+                list <- state
+                name <- read[String]
+                value <- read[String]
+                displayName <- read[String]
+              yield SoftDollarTier(name, value, displayName) :: list
+          }
+      yield SoftDollarTiers(reqId, tiers.reverse)
 
     override def apply(
         entry: Array[String]
-    ): Either[Throwable, SoftDollarTiers] =
-      partiallyApply(
-        entry,
-        { case Array(reqId, nTiers, rest: _*) =>
-          Right(
-            SoftDollarTiers(reqId.toInt, buildSoftDollarTiers(rest.toList, Nil))
-          )
-        }
-      )
+    ): Either[Throwable, SoftDollarTiers] = createSoftDollarTiers.runA(entry)
 
   end given
 
-  inline given Decoder[MarketRule] = new Decoder[MarketRule]:
-    @tailrec
-    private def buildMarketRule(
-        entry: List[String],
-        acc: List[PriceIncrement]
-    ): List[PriceIncrement] =
-      entry match
-        case lowEdge :: increment :: xs =>
-          buildMarketRule(
-            xs,
-            PriceIncrement(
-              lowEdge.toDouble,
-              increment.toDouble
-            ) :: acc
-          )
-        case _ => acc.reverse
-      end match
+  inline given Decoder[MarketRule] with
+    private val createMarketRule: DecoderState[MarketRule] =
+      for
+        marketRuleId <- read[Int]
+        nPriceIncrements <- read[Int]
+        priceIncrements <-
+          (0 until nPriceIncrements).foldLeft(
+            readNothing(List.empty[PriceIncrement])
+          ) { (state, idx) =>
+            for
+              list <- state
+              lowEdge <- read[Double]
+              increment <- read[Double]
+            yield PriceIncrement(lowEdge, increment) :: list
+          }
+      yield MarketRule(marketRuleId, priceIncrements.reverse)
 
-    override def apply(
-        entry: Array[String]
-    ): Either[Throwable, MarketRule] =
-      partiallyApply(
-        entry,
-        { case Array(marketRuleId, nPriceIncrements, rest: _*) =>
-          Right(
-            MarketRule(marketRuleId.toInt, buildMarketRule(rest.toList, Nil))
-          )
-        }
-      )
-
+    override def apply(entry: Array[String]): Either[Throwable, MarketRule] =
+      createMarketRule.runA(entry)
   end given
 
   inline given Decoder[ResponseMsg] with

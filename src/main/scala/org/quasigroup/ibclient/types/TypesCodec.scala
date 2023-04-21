@@ -9,17 +9,19 @@ import java.io.{ByteArrayOutputStream, ObjectOutputStream}
 import scala.collection.mutable
 
 object TypesCodec:
-  def writeModifiedUTF(str: String): mutable.Buffer[Byte] = {
+  
+  def writeModifiedUTF(str: String): Array[Byte] = {
     val byteArrayStream = new ByteArrayOutputStream()
     val objectOutput = new ObjectOutputStream(byteArrayStream)
     objectOutput.writeUTF(str)
-    mutable.Buffer.from(byteArrayStream.toByteArray)
+    byteArrayStream.toByteArray
   }
-  inline given Encoder[Decimal] =
-    summon[Encoder[String]].contramap(decimal =>
-      if decimal == Decimal.INVALID then ""
-      else decimal.value.bigDecimal.stripTrailingZeros.toPlainString
-    )
+  
+  inline given Decoder[MktDataType] =
+    summon[Decoder[Int]].map(MktDataType.fromOrdinal)
+
+  inline given Decoder[NewsType] =
+    summon[Decoder[Int]].map(NewsType.fromOrdinal)
 
   inline given Encoder[UsePriceMgmtAlgo] =
     summon[Encoder[Int]].contramap(_.value)
@@ -88,29 +90,3 @@ object TypesCodec:
 
   inline given Decoder[ContractRight] =
     summon[Decoder[String]].map(ContractRight.fromString)
-
-  inline given Encoder[Contract] with
-    override def apply(contract: Contract): mutable.Buffer[Byte] =
-      summon[Encoder[Int]](contract.conId)
-        ++ summon[Encoder[String]](contract.symbol)
-        ++ summon[Encoder[SecType]](contract.secType)
-        ++ summon[Encoder[String]](contract.lastTradeDateOrContractMonth)
-        ++ summon[Encoder[Double]](contract.strike)
-        ++ summon[Encoder[ContractRight]](contract.right)
-        ++ summon[Encoder[String]](contract.multiplier)
-        ++ summon[Encoder[String]](contract.exchange)
-        ++ summon[Encoder[String]](contract.primaryExch)
-        ++ summon[Encoder[String]](contract.currency)
-        ++ summon[Encoder[String]](contract.localSymbol)
-        ++ summon[Encoder[String]](contract.tradingClass)
-        ++ summon[Encoder[Boolean]](contract.includeExpired)
-
-//     // override def apply(x: ContractRight): mutable.Buffer[Byte] =
-//     //   val str =
-//     //     x match
-//     //       case ContractRight.Ignored => ""
-//     //       case ContractRight.Put     => "P"
-//     //       case ContractRight.Call    => "C"
-//     //   end match
-//     //   summon[Encoder[String]](x)
-//   end given
