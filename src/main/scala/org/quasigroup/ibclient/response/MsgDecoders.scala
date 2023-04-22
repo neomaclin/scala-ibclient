@@ -405,7 +405,7 @@ object MsgDecoders:
     ): Either[Throwable, HistoricalTicksLast] = createHistoricalTicksLast.runA(entry)
   end given
 
-  private val createTickByTicks: DecoderState[Option[ResponseMsg]] =
+  private val createTickByTicks: DecoderState[ResponseMsg] =
     for
       reqId <- read[Int]
       tickType <- read[Int]
@@ -427,7 +427,7 @@ object MsgDecoders:
             tickAttribLast,
             exchange,
             specialConditions
-          ).some
+          )
         case 3 =>
           for
             bidPrice <- read[Double]
@@ -443,11 +443,11 @@ object MsgDecoders:
             bidSize,
             askSize,
             tickAttribBidAsk
-          ).some
+          )
         case 4 =>
           for midPoint <- read[Double]
-          yield TickByTickMidPoint(reqId, time, midPoint).some
-        case _ => readNothing(None)
+          yield TickByTickMidPoint(reqId, time, midPoint)
+        case _ => readNothing(Skip)
     yield tickByTickMsg
   inline given Decoder[HistoricalDataUpdate] with
     private val createHistoricalDataUpdate: DecoderState[HistoricalDataUpdate] =
@@ -974,7 +974,7 @@ object MsgDecoders:
             case HISTORICAL_TICKS_LAST =>
               Decoder.decode[HistoricalTicksLast](msg)
             case TICK_BY_TICK =>
-              createTickByTicks.runA(msg).flatMap(_.toRight(new Exception("unable to decode tickbytick message")))
+              createTickByTicks.runA(msg)
             case ORDER_BOUND =>
               Decoder.decode[OrderBound](msg)
             // case COMPLETED_ORDER =>

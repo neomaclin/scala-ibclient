@@ -375,3 +375,5 @@ enum ResponseMsg:
   case UserInfo(reqId: Int, whiteBrandingId: String) extends ResponseMsg
 
   case SecurityDefinitionOptionalParameterEndMsg(reqId: Int) extends ResponseMsg
+
+  case Skip extends ResponseMsg 
