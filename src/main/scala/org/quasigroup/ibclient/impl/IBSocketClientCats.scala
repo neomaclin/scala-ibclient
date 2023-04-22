@@ -225,15 +225,8 @@ object IBSocketClientCats:
       time: String
   )
 
-  private given Decoder[ConnectionAck] with
-    override def apply(
-        entry: Array[String]
-    ): Either[Throwable, ConnectionAck] =
-      entry match
-        case Array(version, timestamp) =>
-          Right(ConnectionAck(IBClient.ServerVersion(version.toInt), timestamp))
-        case _ => Left(RuntimeException("wrong response"))
-  end given
+  inline given Decoder[IBClient.ServerVersion] =
+    summon[Decoder[Int]].map(IBClient.ServerVersion.apply)
 
   val MAX_MSG_LENGTH: Int = 0xffffff
   def make[F[_]: Async: Console](

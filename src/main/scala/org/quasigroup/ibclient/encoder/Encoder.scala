@@ -15,32 +15,26 @@ import scala.compiletime.{erasedValue, summonInline}
 
 object Encoder:
 
-
   type EncoderState = State[mutable.Buffer[Byte], Unit]
-
 
   inline given Encoder[String] = _.getBytes.toBuffer.+=(0)
 
-  inline given Encoder[Int] = summon[Encoder[String]].contramap(int =>
-    if int == Int.MaxValue then "" else String.valueOf(int)
-  )
+  inline given Encoder[Int] =
+    summon[Encoder[String]].contramap(int => if int == Int.MaxValue then "" else String.valueOf(int))
 
   inline given Encoder[Array[Byte]] = _.toBuffer
 
   inline given Encoder[Boolean] =
     summon[Encoder[Int]].contramap(if _ then 1 else 0)
 
-  inline given Encoder[Double] = summon[Encoder[String]].contramap(double =>
-    if double == Double.MaxValue then "" else String.valueOf(double)
-  )
+  inline given Encoder[Double] =
+    summon[Encoder[String]].contramap(double => if double == Double.MaxValue then "" else String.valueOf(double))
 
-  
   inline given Encoder[Decimal] =
     summon[Encoder[String]].contramap(decimal =>
       if decimal == Decimal.INVALID then ""
       else decimal.value.bigDecimal.stripTrailingZeros.toPlainString
     )
-
 
   inline def encoderSimplySum[T](
       s: Mirror.SumOf[T]
@@ -73,7 +67,6 @@ object Encoder:
       case s: Mirror.SumOf[T]     => encoderSimplySum(s)
       case p: Mirror.ProductOf[T] => encoderProduct(p, encoders)
 
-
   inline given encodelist[T](using encoder: Encoder[T]): Encoder[List[T]] =
     new Encoder[List[T]]:
       def apply(t: List[T]): mutable.Buffer[Byte] =
@@ -81,11 +74,11 @@ object Encoder:
 
   val writeNothing: EncoderState = State(_ -> ())
 
-  inline def writeRaw(bytes: Array[Byte]): EncoderState = State(buffer => (buffer ++ bytes) -> ())
+  inline def writeRaw(bytes: Array[Byte]): EncoderState =
+    State(buffer => (buffer ++ bytes) -> ())
 
   inline def write[T: Encoder](value: T): EncoderState =
     State(buffer => (buffer ++ summon[Encoder[T]](value)) -> ())
-     
 
 end Encoder
 

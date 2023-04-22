@@ -19,8 +19,7 @@ enum RequestMsg:
       pattern: String
   ) extends RequestMsg
 
-  case ReqMktDepthExchanges(msgId: Int = REQ_MKT_DEPTH_EXCHANGES)
-      extends RequestMsg
+  case ReqMktDepthExchanges(msgId: Int = REQ_MKT_DEPTH_EXCHANGES) extends RequestMsg
 
   case ReqreqSmartComponents(
       msgId: Int = REQ_SMART_COMPONENTS,
@@ -164,8 +163,7 @@ enum RequestMsg:
       order: Order
   ) extends RequestMsg
 
-  case CancelOrder(msgId: Int = CANCEL_ORDER, version: Int = 1, id: Int)
-      extends RequestMsg
+  case CancelOrder(msgId: Int = CANCEL_ORDER, version: Int = 1, id: Int) extends RequestMsg
 
   case ReqAccountUpdates(
       msgId: Int = REQ_ACCOUNT_DATA,
@@ -215,8 +213,7 @@ enum RequestMsg:
       version: Int = 1
   ) extends RequestMsg
 
-  case ReqIds(msgId: Int = REQ_IDS, version: Int = 1, numIds: Int)
-      extends RequestMsg
+  case ReqIds(msgId: Int = REQ_IDS, version: Int = 1, numIds: Int) extends RequestMsg
 
   case ReqNewsBulletins(
       msgId: Int = REQ_NEWS_BULLETINS,
@@ -241,14 +238,11 @@ enum RequestMsg:
       bAutoBind: Boolean
   ) extends RequestMsg
 
-  case ReqAllOpenOrders(msgId: Int = REQ_ALL_OPEN_ORDERS, version: Int = 1)
-      extends RequestMsg
+  case ReqAllOpenOrders(msgId: Int = REQ_ALL_OPEN_ORDERS, version: Int = 1) extends RequestMsg
 
-  case ReqManagedAccts(msgId: Int = REQ_MANAGED_ACCTS, version: Int = 1)
-      extends RequestMsg
+  case ReqManagedAccts(msgId: Int = REQ_MANAGED_ACCTS, version: Int = 1) extends RequestMsg
 
-  case RequestFA(msgId: Int = REQ_FA, version: Int = 1, faDataType: Int)
-      extends RequestMsg
+  case RequestFA(msgId: Int = REQ_FA, version: Int = 1, faDataType: Int) extends RequestMsg
 
   case ReplaceFA(
       msgId: Int = REPLACE_FA,
@@ -257,8 +251,7 @@ enum RequestMsg:
       xml: String
   ) extends RequestMsg
 
-  case ReqCurrentTime(msgId: Int = REQ_CURRENT_TIME, version: Int = 1)
-      extends RequestMsg
+  case ReqCurrentTime(msgId: Int = REQ_CURRENT_TIME, version: Int = 1) extends RequestMsg
 
   case ReqFundamentalData(
       msgId: Int = REQ_FUNDAMENTAL_DATA,
@@ -307,8 +300,7 @@ enum RequestMsg:
       reqId: Int
   ) extends RequestMsg
 
-  case ReqGlobalCancel(msgId: Int = REQ_GLOBAL_CANCEL, version: Int = 1)
-      extends RequestMsg
+  case ReqGlobalCancel(msgId: Int = REQ_GLOBAL_CANCEL, version: Int = 1) extends RequestMsg
 
   case ReqMarketDataType(
       msgId: Int = REQ_MARKET_DATA_TYPE,
@@ -416,11 +408,9 @@ enum RequestMsg:
       timePeriod: String
   ) extends RequestMsg
 
-  case CancelHistogramData(msgId: Int = CANCEL_HISTOGRAM_DATA, tickerId: Int)
-      extends RequestMsg
+  case CancelHistogramData(msgId: Int = CANCEL_HISTOGRAM_DATA, tickerId: Int) extends RequestMsg
 
-  case ReqMarketRule(msgId: Int = REQ_MARKET_RULE, marketRuleId: Int)
-      extends RequestMsg
+  case ReqMarketRule(msgId: Int = REQ_MARKET_RULE, marketRuleId: Int) extends RequestMsg
 
   case ReqPnL(
       msgId: Int = REQ_PNL,
@@ -439,8 +429,7 @@ enum RequestMsg:
       conId: Int
   ) extends RequestMsg
 
-  case CancelPnLSingle(msgId: Int = CANCEL_PNL_SINGLE, reqId: Int)
-      extends RequestMsg
+  case CancelPnLSingle(msgId: Int = CANCEL_PNL_SINGLE, reqId: Int) extends RequestMsg
 
   case ReqHistoricalTicks(
       msgId: Int = REQ_HISTORICAL_TICKS,
@@ -464,23 +453,17 @@ enum RequestMsg:
       ignoreSize: Boolean
   ) extends RequestMsg
 
-  case CancelTickByTickData(msgId: Int = CANCEL_TICK_BY_TICK_DATA, reqId: Int)
-      extends RequestMsg
+  case CancelTickByTickData(msgId: Int = CANCEL_TICK_BY_TICK_DATA, reqId: Int) extends RequestMsg
 
-  case ReqCompletedOrders(msgId: Int = REQ_COMPLETED_ORDERS, apiOnly: Boolean)
-      extends RequestMsg
+  case ReqCompletedOrders(msgId: Int = REQ_COMPLETED_ORDERS, apiOnly: Boolean) extends RequestMsg
 
-  case ReqWshMetaData(msgId: Int = REQ_WSH_META_DATA, reqId: Int)
-      extends RequestMsg
+  case ReqWshMetaData(msgId: Int = REQ_WSH_META_DATA, reqId: Int) extends RequestMsg
 
-  case CancelWshMetaData(msgId: Int = CANCEL_WSH_META_DATA, reqId: Int)
-      extends RequestMsg
+  case CancelWshMetaData(msgId: Int = CANCEL_WSH_META_DATA, reqId: Int) extends RequestMsg
 
-  case ReqWshEventData(msgId: Int = REQ_WSH_EVENT_DATA, reqId: Int)
-      extends RequestMsg
+  case ReqWshEventData(msgId: Int = REQ_WSH_EVENT_DATA, reqId: Int) extends RequestMsg
 
-  case CancelWshEventData(msgId: Int = CANCEL_WSH_EVENT_DATA, reqId: Int)
-      extends RequestMsg
+  case CancelWshEventData(msgId: Int = CANCEL_WSH_EVENT_DATA, reqId: Int) extends RequestMsg
 
   case ReqUserInf(msgId: Int = REQ_USER_INFO, reqId: Int) extends RequestMsg
 
@@ -493,5 +476,4 @@ enum RequestMsg:
       formatDate: Int
   ) extends RequestMsg
 
-  case CancelHeadTimestamp(msgId: Int = CANCEL_HEAD_TIMESTAMP, tickerId: Int)
-      extends RequestMsg
+  case CancelHeadTimestamp(msgId: Int = CANCEL_HEAD_TIMESTAMP, tickerId: Int) extends RequestMsg

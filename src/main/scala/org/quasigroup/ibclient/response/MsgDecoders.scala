@@ -9,19 +9,12 @@ import org.quasigroup.ibclient.decoder.Decoder
 import org.quasigroup.ibclient.decoder.Decoder.*
 import org.quasigroup.ibclient.response.ResponseMsg.*
 
-import cats.syntax.option.*
+import cats.syntax.all.*
 import scala.annotation.tailrec
 import scala.util.Right
 import scala.util.Try
 
 object MsgDecoders:
-
-  inline def partiallyApply[T](
-      entry: Array[String],
-      matching: PartialFunction[Array[String], Either[Throwable, T]]
-  ): Either[Throwable, T] =
-    matching.applyOrElse(entry, _ => Left(new Exception("msg format error")))
-
   inline given Decoder[UpdatePortfolio] with
     private val createUpdatePortfolio: DecoderState[UpdatePortfolio] =
       for
@@ -91,16 +84,7 @@ object MsgDecoders:
         size <-
           if version >= 2 then read[Decimal] else readNothing(Decimal.INVALID)
         tickAttrib <-
-          if version >= 3 then
-            read[Int].map { attrMask =>
-              val mask = BitMask(attrMask)
-              TickAttrib(
-                canAutoExecute = mask.get(0),
-                pastLimit = mask.get(1),
-                preOpen = mask.get(2)
-              )
-            }
-          else readNothing(TickAttrib())
+          if version >= 3 then read[TickAttrib] else readNothing(TickAttrib())
       yield {
         val optionalSizeTickType =
           if version >= 2 then
@@ -126,97 +110,55 @@ object MsgDecoders:
     ): Either[Throwable, TickPrice] = createTickPice.runA(entry)
   end given
 
-  // inline given Decoder[TickOptionComputation] with
-  //   private val createTickOptionComputation =
+  inline given Decoder[TickOptionComputation] with
+    private val createTickOptionComputation: DecoderState[TickOptionComputation] =
+      for
+        version <- read[Int]
+        tickerId <- read[Int]
+        tickType <- read[TickType]
+        tickAttrib <- read[TickAttrib]
+        impliedVol <- read[Double].map(impliedVol => if impliedVol === -1 then Double.MaxValue else impliedVol)
+        delta <- read[Double].map(delta => if delta === -2 then Double.MaxValue else delta)
+        isOption =
+          (version >= 6 || tickType == TickType.MODEL_OPTION || tickType == TickType.DELAYED_MODEL_OPTION)
+        optPrice <-
+          if isOption then read[Double].map(optPrice => if optPrice === -1 then Double.MaxValue else optPrice)
+          else readNothing(Double.MaxValue)
+        pvDividend <-
+          if isOption then read[Double].map(pvDividend => if pvDividend === -1 then Double.MaxValue else pvDividend)
+          else readNothing(Double.MaxValue)
+        isRightVersion = (version >= 6)
+        gamma <-
+          if isRightVersion then read[Double].map(gamma => if gamma === -2 then Double.MaxValue else gamma)
+          else readNothing(Double.MaxValue)
+        vega <-
+          if isRightVersion then read[Double].map(vega => if vega === -2 then Double.MaxValue else vega)
+          else readNothing(Double.MaxValue)
+        theta <-
+          if isRightVersion then read[Double].map(theta => if theta === -2 then Double.MaxValue else theta)
+          else readNothing(Double.MaxValue)
+        undPrice <-
+          if isRightVersion then read[Double].map(undPrice => if undPrice === -1 then Double.MaxValue else undPrice)
+          else readNothing(Double.MaxValue)
+      yield TickOptionComputation(
+        tickerId,
+        tickType,
+        tickAttrib,
+        impliedVol,
+        delta,
+        optPrice,
+        pvDividend,
+        gamma,
+        vega,
+        theta,
+        undPrice
+      )
 
-  //   def apply(
-  //       entry: Array[String]
-  //   ): Either[Throwable, TickOptionComputation] =
-  //     // partiallyApply(
-  //     //   entry,
-  //     //   {
-  //     //     case Array(
-  //     //           version,
-  //     //           tickerId,
-  //     //           tickType,
-  //     //           impliedVol,
-  //     //           delta,
-  //     //           rest: _*
-  //     //         ) =>
-  //     //       val versionInt = version.toInt
-  //     //       val tickerIdInt = tickerId.toInt
-  //     //       val tickTypeEnum = TickType.fromOrdinal(tickType.toInt)
-  //     //       val impliedVolDouble = Try(impliedVol.toDouble)
-  //     //         .filter(_ != -1)
-  //     //         .getOrElse(Double.MaxValue)
-  //     //       val deltaDouble =
-  //     //         Try(delta.toDouble).filter(_ != -2).getOrElse(Double.MaxValue)
-  //     //       val (optPriceDouble, pvDividendDouble, otherRest) =
-  //     //         if (
-  //     //           versionInt >= 6 || tickTypeEnum == TickType.MODEL_OPTION || tickTypeEnum == TickType.DELAYED_MODEL_OPTION
-  //     //         )
-  //     //         then
-  //     //           rest.toArray match
-  //     //             case Array(optPrice, pvDividend, remaining: _*) =>
-  //     //               val optPriceDouble = Try(optPrice.toDouble)
-  //     //                 .filter(_ != -1)
-  //     //                 .getOrElse(Double.MaxValue)
-  //     //               val pvDividendDouble = Try(pvDividend.toDouble)
-  //     //                 .filter(_ != -1)
-  //     //                 .getOrElse(Double.MaxValue)
-  //     //               (optPriceDouble, pvDividendDouble, remaining)
-  //     //             case _ => (Double.MaxValue, Double.MaxValue, rest)
-  //     //         else (Double.MaxValue, Double.MaxValue, rest)
-  //     //       val (gammaDouble, vegaDouble, thetaDouble, undPriceDouble) =
-  //     //         if (versionInt >= 6) then
-  //     //           rest.toArray match
-  //     //             case Array(gamma, vega, theta, undPrice) =>
-  //     //               val gammaDouble = Try(gamma.toDouble)
-  //     //                 .filter(_ != -2)
-  //     //                 .getOrElse(Double.MaxValue)
-  //     //               val vegaDouble = Try(vega.toDouble)
-  //     //                 .filter(_ != -2)
-  //     //                 .getOrElse(Double.MaxValue)
-  //     //               val thetaDouble = Try(theta.toDouble)
-  //     //                 .filter(_ != -2)
-  //     //                 .getOrElse(Double.MaxValue)
-  //     //               val undPriceDouble = Try(undPrice.toDouble)
-  //     //                 .filter(_ != -1)
-  //     //                 .getOrElse(Double.MaxValue)
-  //     //               (gammaDouble, vegaDouble, thetaDouble, undPriceDouble)
-  //     //             case _ =>
-  //     //               (
-  //     //                 Double.MaxValue,
-  //     //                 Double.MaxValue,
-  //     //                 Double.MaxValue,
-  //     //                 Double.MaxValue
-  //     //               )
-  //     //         else
-  //     //           (
-  //     //             Double.MaxValue,
-  //     //             Double.MaxValue,
-  //     //             Double.MaxValue,
-  //     //             Double.MaxValue
-  //     //           )
-  //     //       Right(
-  //     //         TickOptionComputation(
-  //     //           tickerIdInt,
-  //     //           tickTypeEnum,
-  //     //           impliedVolDouble,
-  //     //           deltaDouble,
-  //     //           optPriceDouble,
-  //     //           pvDividendDouble,
-  //     //           gammaDouble,
-  //     //           vegaDouble,
-  //     //           thetaDouble,
-  //     //           undPriceDouble
-  //     //         )
-  //     //       )
-
-  //     //   }
-  //     // )
-
-  // end given
+    override def apply(
+        entry: Array[String]
+    ): Either[Throwable, TickOptionComputation] =
+      createTickOptionComputation.runA(entry)
+  end given
 
   inline given Decoder[PositionMsg] with
     private val createPositionMsg: DecoderState[PositionMsg] =
@@ -307,36 +249,44 @@ object MsgDecoders:
   end given
 
   inline given Decoder[SecurityDefinitionOptionalParameter] with
+    private val createSecurityDefinitionOptionalParameter: DecoderState[SecurityDefinitionOptionalParameter] =
+      for
+        reqId <- read[Int]
+        exchange <- read[String]
+        underlyingConId <- read[Int]
+        tradingClass <- read[String]
+        multiplier <- read[String]
+        expirationsSize <- read[Int]
+        expirations <- (0 until expirationsSize).foldLeft(
+          readNothing(Set.empty[String])
+        ) { (state, idx) =>
+          for
+            set <- state
+            expiration <- read[String]
+          yield set + expiration
+        }
+        strikesSize <- read[Int]
+        strikes <- (0 until strikesSize).foldLeft(
+          readNothing(Set.empty[Double])
+        ) { (state, idx) =>
+          for
+            set <- state
+            strike <- read[Double]
+          yield set + strike
+        }
+      yield SecurityDefinitionOptionalParameter(
+        reqId,
+        exchange,
+        underlyingConId,
+        tradingClass,
+        multiplier,
+        expirations,
+        strikes
+      )
     def apply(
         entry: Array[String]
     ): Either[Throwable, SecurityDefinitionOptionalParameter] =
-      partiallyApply(
-        entry,
-        {
-          case Array(
-                reqId,
-                exchange,
-                underlyingConId,
-                tradingClass,
-                multiplier,
-                expirationsSize,
-                rest: _*
-              ) =>
-            val expirationsSizeInt = expirationsSize.toInt
-            val (expirations, stikes) = rest.toArray.splitAt(expirationsSizeInt)
-            Right(
-              SecurityDefinitionOptionalParameter(
-                reqId.toInt,
-                exchange,
-                underlyingConId.toInt,
-                tradingClass,
-                multiplier,
-                expirations.toSet,
-                stikes.tail.toSet.map(_.toDouble)
-              )
-            )
-        }
-      )
+      createSecurityDefinitionOptionalParameter.runA(entry)
 
   end given
 
@@ -344,9 +294,7 @@ object MsgDecoders:
     summon[Decoder[CommissionReport]].map(CommissionReportMsg(_))
 
   inline given Decoder[VerifyAndAuthCompleted] =
-    summon[Decoder[VerifyCompleted]].map(v =>
-      VerifyAndAuthCompleted(v.isSuccessful, v.errorText)
-    )
+    summon[Decoder[VerifyCompleted]].map(v => VerifyAndAuthCompleted(v.isSuccessful, v.errorText))
   end given
 
   inline given Decoder[VerifyCompleted] with
@@ -363,8 +311,7 @@ object MsgDecoders:
   end given
 
   inline given Decoder[DeltaNeutralValidation] with
-    private val createDeltaNeutralValidation
-        : DecoderState[DeltaNeutralValidation] =
+    private val createDeltaNeutralValidation: DecoderState[DeltaNeutralValidation] =
       for
         reqId <- read[Int]
         conid <- read[Int]
@@ -375,171 +322,161 @@ object MsgDecoders:
         DeltaNeutralContract(conid, delta, price)
       )
 
-    def apply(
+    override def apply(
         entry: Array[String]
     ): Either[Throwable, DeltaNeutralValidation] =
       createDeltaNeutralValidation.runA(entry)
   end given
 
   inline given Decoder[HistoricalTicks] with
-    @tailrec
-    private def buildHistoricalTicks(
-        entry: List[String],
-        acc: List[HistoricalTick]
-    ): List[HistoricalTick] =
-      entry match
-        case time :: _ :: price :: size :: xs =>
-          buildHistoricalTicks(
-            xs,
-            HistoricalTick(
-              time.toLong,
-              price.toDouble,
-              Decimal.parse(size).getOrElse(Decimal.INVALID)
-            ) :: acc
-          )
-        case _ =>
-          acc.reverse
-      end match
-
-    def apply(
-        entry: Array[String]
-    ): Either[Throwable, HistoricalTicks] =
-      partiallyApply(
-        entry,
-        { case Array(reqId, tickCount, rest: _*) =>
-          val entries = rest.toList
-          Right(
-            HistoricalTicks(
-              reqId.toInt,
-              buildHistoricalTicks(entries.init, Nil),
-              entries.last.toBoolean
-            )
-          )
+    private val createHistoricalTicks: DecoderState[HistoricalTicks] =
+      for
+        reqId <- read[Int]
+        tickCount <- read[Int]
+        ticks <- (0 until tickCount).foldLeft(
+          readNothing(List.empty[HistoricalTick])
+        ) { (state, idx) =>
+          for
+            list <- state
+            time <- read[Long]
+            _ <- read[Int] // for consistency
+            price <- read[Double]
+            size <- read[Decimal]
+          yield HistoricalTick(time, price, size) :: list
         }
-      )
+        done <- read[Boolean]
+      yield HistoricalTicks(reqId, ticks.reverse, done)
+
+    override def apply(
+        entry: Array[String]
+    ): Either[Throwable, HistoricalTicks] = createHistoricalTicks.runA(entry)
+
   end given
 
   inline given Decoder[HistoricalTicksBidAsk] with
-    @tailrec
-    private def buildHistoricalTickBidAsks(
-        entry: List[String],
-        acc: List[HistoricalTickBidAsk]
-    ): List[HistoricalTickBidAsk] =
-      entry match
-        case time :: mask :: priceBid :: priceAsk :: sizeBid :: sizeAsk :: xs =>
-          val bitMask = BitMask(mask.toInt)
-
-          val tickAttribBidAsk = TickAttribBidAsk(
-            askPastHigh = bitMask.get(0),
-            bidPastLow = bitMask.get(1)
-          )
-          val tickBiAsk = HistoricalTickBidAsk(
-            time = time.toLong,
-            tickAttribBidAsk = tickAttribBidAsk,
-            priceBid = priceBid.toDouble,
-            priceAsk = priceAsk.toDouble,
-            sizeBid = Decimal.parse(sizeBid).getOrElse(Decimal.INVALID),
-            sizeAsk = Decimal.parse(sizeAsk).getOrElse(Decimal.INVALID)
-          )
-          buildHistoricalTickBidAsks(xs, tickBiAsk :: acc)
-        case _ =>
-          acc.reverse
-      end match
+    private val createHistoricalTicksBidAsk: DecoderState[HistoricalTicksBidAsk] =
+      for
+        reqId <- read[Int]
+        tickCount <- read[Int]
+        ticks <- (0 until tickCount).foldLeft(
+          readNothing(List.empty[HistoricalTickBidAsk])
+        ) { (state, idx) =>
+          for
+            list <- state
+            time <- read[Long]
+            tickAttribBidAsk <- read[TickAttribBidAsk] // for consistency
+            priceBid <- read[Double]
+            priceAsk <- read[Double]
+            sizeBid <- read[Decimal]
+            sizeAsk <- read[Decimal]
+          yield HistoricalTickBidAsk(time, tickAttribBidAsk, priceBid, priceAsk, sizeBid, sizeAsk) :: list
+        }
+        done <- read[Boolean]
+      yield HistoricalTicksBidAsk(reqId, ticks.reverse, done)
 
     def apply(
         entry: Array[String]
-    ): Either[Throwable, HistoricalTicksBidAsk] =
-      partiallyApply(
-        entry,
-        { case Array(reqId, tickCount, rest: _*) =>
-          val entries = rest.toList
-          Right(
-            HistoricalTicksBidAsk(
-              reqId.toInt,
-              buildHistoricalTickBidAsks(entries.init, Nil),
-              entries.last.toBoolean
-            )
-          )
-        }
-      )
+    ): Either[Throwable, HistoricalTicksBidAsk] = createHistoricalTicksBidAsk.runA(entry)
   end given
 
   inline given Decoder[HistoricalTicksLast] with
-    @tailrec
-    private def buildHistoricalTickLasts(
-        entry: List[String],
-        acc: List[HistoricalTickLast]
-    ): List[HistoricalTickLast] =
-      entry match
-        case time :: mask :: price :: size :: exchange :: specialConditions :: xs =>
-          val bitMask = BitMask(mask.toInt)
+    private val createHistoricalTicksLast: DecoderState[HistoricalTicksLast] =
+      for
+        reqId <- read[Int]
+        tickCount <- read[Int]
+        ticks <- (0 until tickCount).foldLeft(
+          readNothing(List.empty[HistoricalTickLast])
+        ) { (state, idx) =>
+          for
+            list <- state
+            time <- read[Long]
+            tickAttribLast <- read[TickAttribLast] // for consistency
+            price <- read[Double]
+            size <- read[Decimal]
+            exchange <- read[String]
+            specialConditions <- read[String]
+          yield HistoricalTickLast(time, tickAttribLast, price, size, exchange, specialConditions) :: list
+        }
+        done <- read[Boolean]
+      yield HistoricalTicksLast(reqId, ticks.reverse, done)
 
-          val tickAttribLast = TickAttribLast(
-            pastLimit = bitMask.get(0),
-            unreported = bitMask.get(1)
-          )
-          val tickLast = HistoricalTickLast(
-            time = time.toLong,
-            tickAttribLast = tickAttribLast,
-            price = price.toDouble,
-            size = Decimal.parse(size).getOrElse(Decimal.INVALID),
-            exchange = exchange,
-            specialConditions = specialConditions
-          )
-          buildHistoricalTickLasts(xs, tickLast :: acc)
-        case _ =>
-          acc.reverse
-      end match
     def apply(
         entry: Array[String]
-    ): Either[Throwable, HistoricalTicksLast] =
-      partiallyApply(
-        entry,
-        { case Array(reqId, tickCount, rest: _*) =>
-          val entries = rest.toList
-          Right(
-            HistoricalTicksLast(
-              reqId.toInt,
-              buildHistoricalTickLasts(entries.init, Nil),
-              entries.last.toBoolean
-            )
-          )
-        }
-      )
+    ): Either[Throwable, HistoricalTicksLast] = createHistoricalTicksLast.runA(entry)
   end given
 
-  // inline given Decoder[TickByTickAllLast] with
-  //   def apply(
-  //       entry: Array[String]
-  //   ): Either[Throwable, TickByTickAllLast] =
-  //     partiallyApply(
-  //       entry,
-  //       { case Array(reqId, rest: _*) =>
-  //         for
-  //           reqIdInt <- summon[Decoder[Int]](Array(reqId))
-  //           deltaNeutralContract <- summon[Decoder[DeltaNeutralContract]](
-  //             rest.toArray
-  //           )
-  //         yield DeltaNeutralValidation(reqIdInt, deltaNeutralContract)
-  //       }
-  //     )
-  // end given
-
+  private val createTickByTicks: DecoderState[Option[ResponseMsg]] =
+    for
+      reqId <- read[Int]
+      tickType <- read[Int]
+      time <- read[Long]
+      tickByTickMsg <- tickType match
+        case 1 | 2 =>
+          for
+            price <- read[Double]
+            size <- read[Decimal]
+            tickAttribLast <- read[TickAttribLast] // for consistency
+            exchange <- read[String]
+            specialConditions <- read[String]
+          yield TickByTickAllLast(
+            reqId,
+            tickType,
+            time,
+            price,
+            size,
+            tickAttribLast,
+            exchange,
+            specialConditions
+          ).some
+        case 3 =>
+          for
+            bidPrice <- read[Double]
+            askPrice <- read[Double]
+            bidSize <- read[Decimal]
+            askSize <- read[Decimal]
+            tickAttribBidAsk <- read[TickAttribBidAsk] // for consistency
+          yield TickByTickBidAsk(
+            reqId,
+            time,
+            bidPrice,
+            askPrice,
+            bidSize,
+            askSize,
+            tickAttribBidAsk
+          ).some
+        case 4 =>
+          for midPoint <- read[Double]
+          yield TickByTickMidPoint(reqId, time, midPoint).some
+        case _ => readNothing(None)
+    yield tickByTickMsg
   inline given Decoder[HistoricalDataUpdate] with
+    private val createHistoricalDataUpdate: DecoderState[HistoricalDataUpdate] =
+      for
+        reqId <- read[Int]
+        barCount <- read[Int]
+        date <- read[String]
+        open <- read[Double]
+        close <- read[Double]
+        high <- read[Double]
+        low <- read[Double]
+        wap <- read[Decimal]
+        volume <- read[Decimal]
+      yield HistoricalDataUpdate(
+        reqId,
+        Bar(
+          time = date,
+          open = open,
+          high = high,
+          low = low,
+          close = close,
+          volume = volume,
+          count = barCount,
+          wap = wap
+        )
+      )
     def apply(
         entry: Array[String]
-    ): Either[Throwable, HistoricalDataUpdate] =
-      partiallyApply(
-        entry,
-        { case Array(reqId, rest: _*) =>
-          for
-            reqIdInt <- summon[Decoder[Int]](Array(reqId))
-            bar <- summon[Decoder[Bar]](
-              rest.toArray
-            )
-          yield HistoricalDataUpdate(reqIdInt, bar)
-        }
-      )
+    ): Either[Throwable, HistoricalDataUpdate] = createHistoricalDataUpdate.runA(entry)
   end given
 
   inline given Decoder[HistoricalData] with
@@ -642,6 +579,56 @@ object MsgDecoders:
     override def apply(
         entry: Array[String]
     ): Either[Throwable, HistogramData] = createHistogramData.runA(entry)
+
+  end given
+
+  inline given Decoder[SymbolSamples] with
+    private val createSymbolSamples: DecoderState[SymbolSamples] =
+      for
+        reqId <- read[Int]
+        nContractDescriptions <- read[Int]
+        contractDescriptions <- (0 until nContractDescriptions).foldLeft(
+          readNothing(List.empty[ContractDescription])
+        ) { (state, idx) =>
+          for
+            list <- state
+            conid <- read[Int]
+            symbol <- read[String]
+            secType <- read[SecType]
+            primaryExch <- read[String]
+            currency <- read[String]
+            nDerivativeSecTypes <- read[Int]
+            derivativeSecTypes <-
+              (0 until nDerivativeSecTypes).foldLeft(
+                readNothing(List.empty[String])
+              ) { (state, idx) =>
+                for {
+                  derivativeSecTypes <- state
+                  derivativeSecType <- read[String]
+                } yield derivativeSecType :: derivativeSecTypes
+              }
+            description <- read[String]
+            issuerId <- read[String]
+          yield {
+            val contract =
+              Contract(
+                conId = conid,
+                symbol = symbol,
+                secType = secType,
+                primaryExch = primaryExch,
+                currency = currency,
+                description = description,
+                issuerId = issuerId
+              )
+
+            ContractDescription(contract, derivativeSecTypes.reverse) :: list
+          }
+        }
+      yield SymbolSamples(reqId, contractDescriptions.reverse)
+
+    override def apply(
+        entry: Array[String]
+    ): Either[Throwable, SymbolSamples] = createSymbolSamples.runA(entry)
 
   end given
 
@@ -752,14 +739,13 @@ object MsgDecoders:
         reqId <- read[Int]
         nTiers <- read[Int]
         tiers <-
-          (0 until nTiers).foldLeft(readNothing(List.empty[SoftDollarTier])) {
-            (state, idx) =>
-              for
-                list <- state
-                name <- read[String]
-                value <- read[String]
-                displayName <- read[String]
-              yield SoftDollarTier(name, value, displayName) :: list
+          (0 until nTiers).foldLeft(readNothing(List.empty[SoftDollarTier])) { (state, idx) =>
+            for
+              list <- state
+              name <- read[String]
+              value <- read[String]
+              displayName <- read[String]
+            yield SoftDollarTier(name, value, displayName) :: list
           }
       yield SoftDollarTiers(reqId, tiers.reverse)
 
@@ -768,6 +754,49 @@ object MsgDecoders:
     ): Either[Throwable, SoftDollarTiers] = createSoftDollarTiers.runA(entry)
 
   end given
+
+  // inline given Decoder[ScannerData] with
+  //   private val createScannerData: DecoderState[ScannerData] =
+  //     for
+  //       version <- read[Int]
+  //       tickerId <- read[Int]
+  //       numberOfElements <- read[Int]
+  //       elements <-
+  //         (0 until numberOfElements).foldLeft(
+  //           readNothing(List.empty[ScannerDataElement])
+  //         ) { (state, idx) =>
+  //           for
+  //             list <- state
+  //             rank <- read[Int]
+
+  // 	    ContractDetails contract = new ContractDetails();
+  // 	    if (version >= 3) {
+  // 	    	contract.contract().conid(readInt());
+  // 	    }
+  // 	    contract.contract().symbol(readStr());
+  // 	    contract.contract().secType(readStr());
+  // 	    contract.contract().lastTradeDateOrContractMonth(readStr());
+  // 	    contract.contract().strike(readDouble());
+  // 	    contract.contract().right(readStr());
+  // 	    contract.contract().exchange(readStr());
+  // 	    contract.contract().currency(readStr());
+  // 	    contract.contract().localSymbol(readStr());
+  // 	    contract.marketName(readStr());
+  // 	    contract.contract().tradingClass(readStr());
+  // 	    String distance = readStr();
+  // 	    String benchmark = readStr();
+  // 	    String projection = readStr();
+  // 	    String legsStr = null;
+  // 	    if (version >= 2) {
+  // 	    	legsStr = readStr();
+  // 	    }
+  //           yield ScannerDataElement(lowEdge, increment) :: list
+  //         }
+  //     yield ScannerData(tickerId, elements.reverse)
+
+  //   override def apply(entry: Array[String]): Either[Throwable, ScannerData] =
+  //     createScannerData.runA(entry)
+  // end given
 
   inline given Decoder[MarketRule] with
     private val createMarketRule: DecoderState[MarketRule] =
@@ -792,9 +821,8 @@ object MsgDecoders:
 
   inline given Decoder[ResponseMsg] with
     def apply(entry: Array[String]): Either[Throwable, ResponseMsg] =
-      partiallyApply(
-        entry,
-        { case Array(msgId, rest: _*) =>
+      entry match
+        case Array(msgId, rest: _*) =>
           val msg = rest.toArray
           msgId.toInt match
             case END_CONN =>
@@ -834,7 +862,7 @@ object MsgDecoders:
             case NEXT_VALID_ID =>
               Decoder.decode[NextValidId](msg.tail)
             // case SCANNER_DATA =>
-            //         Decoder.decode[ScannerData](msg)
+            //        Decoder.decode[ScannerData](msg)
             // case CONTRACT_DATA =>
             //         Decoder.decode[ContractData](msg)
             // case BOND_CONTRACT_DATA =>
@@ -909,8 +937,8 @@ object MsgDecoders:
               Decoder.decode[SmartComponents](msg)
             case TICK_REQ_PARAMS =>
               Decoder.decode[TickReqParams](msg)
-            // case SYMBOL_SAMPLES =>
-            //         Decoder.decode[SymbolSamples](msg)
+            case SYMBOL_SAMPLES =>
+              Decoder.decode[SymbolSamples](msg)
             case MKT_DEPTH_EXCHANGES =>
               Decoder.decode[MktDepthExchanges](msg)
             case HEAD_TIMESTAMP =>
@@ -945,8 +973,8 @@ object MsgDecoders:
               Decoder.decode[HistoricalTicksBidAsk](msg)
             case HISTORICAL_TICKS_LAST =>
               Decoder.decode[HistoricalTicksLast](msg)
-            // case TICK_BY_TICK =>
-            //         Decoder.decode[TickByTick](msg)
+            case TICK_BY_TICK =>
+              createTickByTicks.runA(msg).flatMap(_.toRight(new Exception("unable to decode tickbytick message")))
             case ORDER_BOUND =>
               Decoder.decode[OrderBound](msg)
             // case COMPLETED_ORDER =>
@@ -973,6 +1001,6 @@ object MsgDecoders:
                 )
               )
           end match
-        }
-      )
+        case _ => Left(new Exception("unable to decode message"))
+      end match
   end given

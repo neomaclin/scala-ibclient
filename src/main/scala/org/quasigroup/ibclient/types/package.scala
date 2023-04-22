@@ -28,11 +28,11 @@ final case class ComboLeg(
 )
 
 final case class Contract(
-    conId: Int,
+    conId: Int = 0,
     symbol: String,
     secType: SecType,
-    lastTradeDateOrContractMonth: String,
-    strike: Double,
+    lastTradeDateOrContractMonth: String = "",
+    strike: Double = 0,
     right: ContractRight = ContractRight.Ignored,
     multiplier: String = "",
     exchange: String = "",
@@ -44,6 +44,7 @@ final case class Contract(
     includeExpired: Boolean = false,
     secIdType: SecIdType = SecIdType.Ignored,
     secId: String = "",
+    description: String = "",
     issuerId: String = "",
     deltaNeutralContract: Option[DeltaNeutralContract] = None
 )
@@ -71,6 +72,14 @@ final case class ContractDescription(
     derivativeSecTypes: List[String]
 )
 final case class DeltaNeutralContract(conid: Int, delta: Double, price: Double)
+final case class ScannerDataElement(
+    rank: Int,
+    contractDetails: ContractDetails,
+    distance: String,
+    benchmark: String,
+    projection: String,
+    legsStr: String
+)
 
 object ComboLeg:
   enum OpenClose:
@@ -527,8 +536,7 @@ final case class Order(
     orderComboLegs: List[Order.ComboLeg] = Nil,
     // processing control
     whatIf: Boolean = false,
-    transmit: Boolean =
-      true, // if false, order will be sent to TWS but not transmitted to server
+    transmit: Boolean = true, // if false, order will be sent to TWS but not transmitted to server
     overridePercentageConstraints: Boolean = false,
     // Institutional orders only
     openClose: String = "O", // O=Open, C=Close

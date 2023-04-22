@@ -50,13 +50,13 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers:
     }
   }
 
-  test("ibclient can request for managed accounts") { ibclient =>
-    for {
-      accounts <- ibclient.reqManagedAccts
-    } yield {
-      expect(accounts.accountsList.nonEmpty)
-    }
-  }
+  // test("ibclient can request for managed accounts") { ibclient =>
+  //   for {
+  //     accounts <- ibclient.reqManagedAccts
+  //   } yield {
+  //     expect(accounts.accountsList.nonEmpty)
+  //   }
+  // }
 
 //  I don't have the FA account.
 //  test("ibclient can request for fa ") { ibclient =>

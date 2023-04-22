@@ -11,12 +11,12 @@ enum ResponseMsg:
       tickSize: Option[TickSize]
   ) extends ResponseMsg
 
-  case TickSize(tickerId: Int, sizeTickType: TickType, size: Decimal)
-      extends ResponseMsg
+  case TickSize(tickerId: Int, sizeTickType: TickType, size: Decimal) extends ResponseMsg
 
   case TickOptionComputation(
       tickerId: Int,
       tickType: TickType,
+      tickAttrib: TickAttrib,
       impliedVol: Double,
       delta: Double,
       optPrice: Double,
@@ -27,11 +27,9 @@ enum ResponseMsg:
       undPrice: Double
   ) extends ResponseMsg
 
-  case TickGeneric(tickerId: Int, tickType: TickType, value: Double)
-      extends ResponseMsg
+  case TickGeneric(tickerId: Int, tickType: TickType, value: Double) extends ResponseMsg
 
-  case TickString(tickerId: Int, tickType: TickType, value: String)
-      extends ResponseMsg
+  case TickString(tickerId: Int, tickType: TickType, value: String) extends ResponseMsg
 
   case TickEFP(
       tickerId: Int,
@@ -92,16 +90,13 @@ enum ResponseMsg:
 
   case NextValidId(orderId: Int) extends ResponseMsg
 
-  case ContractDetails(reqId: Int, contractDetails: ContractDetails)
-      extends ResponseMsg
+  case ContractDetails(reqId: Int, contractDetails: ContractDetails) extends ResponseMsg
 
-  case BondContractDetails(reqId: Int, contractDetails: ContractDetails)
-      extends ResponseMsg
+  case BondContractDetails(reqId: Int, contractDetails: ContractDetails) extends ResponseMsg
 
   case ContractDetailsEnd(reqId: Int) extends ResponseMsg
 
-  case ExecDetails(reqId: Int, contract: Contract, execution: Execution)
-      extends ResponseMsg
+  case ExecDetails(reqId: Int, contract: Contract, execution: Execution) extends ResponseMsg
 
   case ExecDetailsEnd(reqId: Int) extends ResponseMsg
 
@@ -145,16 +140,9 @@ enum ResponseMsg:
   case ScannerParameters(xml: String) extends ResponseMsg
 
   case ScannerData(
-      reqId: Int,
-      rank: Int,
-      contractDetails: ContractDetails,
-      distance: String,
-      benchmark: String,
-      projection: String,
-      legsStr: String
+      tickerId: Int,
+      elememts: List[ScannerDataElement]
   ) extends ResponseMsg
-
-  case ScannerDataEnd(reqId: Int) extends ResponseMsg
 
   case RealtimeBar(
       reqId: Int,
@@ -172,16 +160,13 @@ enum ResponseMsg:
 
   case FundamentalData(reqId: Int, data: String) extends ResponseMsg
 
-  case DeltaNeutralValidation(reqId: Int, underComp: DeltaNeutralContract)
-      extends ResponseMsg
+  case DeltaNeutralValidation(reqId: Int, underComp: DeltaNeutralContract) extends ResponseMsg
 
   case TickSnapshotEnd(reqId: Int) extends ResponseMsg
 
-  case MarketDataType(reqId: Int, marketDataType: MktDataType)
-      extends ResponseMsg
+  case MarketDataType(reqId: Int, marketDataType: MktDataType) extends ResponseMsg
 
-  case CommissionReportMsg(commissionReport: CommissionReport)
-      extends ResponseMsg
+  case CommissionReportMsg(commissionReport: CommissionReport) extends ResponseMsg
 
   case PositionMsg(
       account: String,
@@ -204,14 +189,11 @@ enum ResponseMsg:
 
   case VerifyMessageAPI(apiData: String) extends ResponseMsg
 
-  case VerifyCompleted(isSuccessful: Boolean, errorText: String)
-      extends ResponseMsg
+  case VerifyCompleted(isSuccessful: Boolean, errorText: String) extends ResponseMsg
 
-  case VerifyAndAuthMessageAPI(apiData: String, xyzChallange: String)
-      extends ResponseMsg
+  case VerifyAndAuthMessageAPI(apiData: String, xyzChallange: String) extends ResponseMsg
 
-  case VerifyAndAuthCompleted(isSuccessful: Boolean, errorText: String)
-      extends ResponseMsg
+  case VerifyAndAuthCompleted(isSuccessful: Boolean, errorText: String) extends ResponseMsg
 
   case DisplayGroupList(reqId: Int, groups: String) extends ResponseMsg
 
@@ -260,8 +242,7 @@ enum ResponseMsg:
 
   case SecurityDefinitionOptionalParameterEnd(reqId: Int) extends ResponseMsg
 
-  case SoftDollarTiers(reqId: Int, tiers: List[SoftDollarTier])
-      extends ResponseMsg
+  case SoftDollarTiers(reqId: Int, tiers: List[SoftDollarTier]) extends ResponseMsg
 
   case FamilyCodes(familyCodes: List[FamilyCode]) extends ResponseMsg
 
@@ -283,8 +264,7 @@ enum ResponseMsg:
       extraData: String
   ) extends ResponseMsg
 
-  case SmartComponents(reqId: Int, theMap: Map[Int, (String, Char)])
-      extends ResponseMsg
+  case SmartComponents(reqId: Int, theMap: Map[Int, (String, Char)]) extends ResponseMsg
 
   case TickReqParams(
       tickerId: Int,
@@ -295,8 +275,7 @@ enum ResponseMsg:
 
   case NewsProviders(newsProviders: List[NewsProvider]) extends ResponseMsg
 
-  case NewsArticle(requestId: Int, articleType: Int, articleText: String)
-      extends ResponseMsg
+  case NewsArticle(requestId: Int, articleType: Int, articleText: String) extends ResponseMsg
 
   case HistoricalNews(
       requestId: Int,
@@ -310,19 +289,15 @@ enum ResponseMsg:
 
   case HeadTimestamp(reqId: Int, headTimestamp: String) extends ResponseMsg
 
-  case HistogramData(reqId: Int, items: List[HistogramEntry])
-      extends ResponseMsg
+  case HistogramData(reqId: Int, items: List[HistogramEntry]) extends ResponseMsg
 
   case HistoricalDataUpdate(reqId: Int, bar: Bar) extends ResponseMsg
 
-  case RerouteMktDataReq(reqId: Int, conId: Int, exchange: String)
-      extends ResponseMsg
+  case RerouteMktDataReq(reqId: Int, conId: Int, exchange: String) extends ResponseMsg
 
-  case RerouteMktDepthReq(reqId: Int, conId: Int, exchange: String)
-      extends ResponseMsg
+  case RerouteMktDepthReq(reqId: Int, conId: Int, exchange: String) extends ResponseMsg
 
-  case MarketRule(marketRuleId: Int, priceIncrements: List[PriceIncrement])
-      extends ResponseMsg
+  case MarketRule(marketRuleId: Int, priceIncrements: List[PriceIncrement]) extends ResponseMsg
 
   case PnL(
       reqId: Int,
@@ -340,8 +315,7 @@ enum ResponseMsg:
       value: Double
   ) extends ResponseMsg
 
-  case HistoricalTicks(reqId: Int, ticks: List[HistoricalTick], done: Boolean)
-      extends ResponseMsg
+  case HistoricalTicks(reqId: Int, ticks: List[HistoricalTick], done: Boolean) extends ResponseMsg
 
   case HistoricalTicksBidAsk(
       reqId: Int,
@@ -376,14 +350,11 @@ enum ResponseMsg:
       tickAttribBidAsk: TickAttribBidAsk
   ) extends ResponseMsg
 
-  case TickByTickMidPoint(reqId: Int, time: Long, midPoint: Double)
-      extends ResponseMsg
+  case TickByTickMidPoint(reqId: Int, time: Long, midPoint: Double) extends ResponseMsg
 
-  case OrderBound(orderId: Long, apiClientId: Int, apiOrderId: Int)
-      extends ResponseMsg
+  case OrderBound(orderId: Long, apiClientId: Int, apiOrderId: Int) extends ResponseMsg
 
-  case CompletedOrder(contract: Contract, order: Order, orderState: Order.State)
-      extends ResponseMsg
+  case CompletedOrder(contract: Contract, order: Order, orderState: Order.State) extends ResponseMsg
 
   case CompletedOrdersEnd extends ResponseMsg
 

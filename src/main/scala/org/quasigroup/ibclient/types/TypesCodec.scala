@@ -9,14 +9,42 @@ import java.io.{ByteArrayOutputStream, ObjectOutputStream}
 import scala.collection.mutable
 
 object TypesCodec:
-  
+
+  inline given Decoder[TickAttrib] = summon[Decoder[Int]]
+    .map(BitMask(_))
+    .map(mask =>
+      TickAttrib(
+        canAutoExecute = mask.get(0),
+        pastLimit = mask.get(1),
+        preOpen = mask.get(2)
+      )
+    )
+
+  inline given Decoder[TickAttribBidAsk] = summon[Decoder[Int]]
+    .map(BitMask(_))
+    .map(mask =>
+      TickAttribBidAsk(
+        askPastHigh = mask.get(0),
+        bidPastLow = mask.get(1)
+      )
+    )
+
+  inline given Decoder[TickAttribLast] = summon[Decoder[Int]]
+    .map(BitMask(_))
+    .map(mask =>
+      TickAttribLast(
+        pastLimit = mask.get(0),
+        unreported = mask.get(1)
+      )
+    )
+
   def writeModifiedUTF(str: String): Array[Byte] = {
     val byteArrayStream = new ByteArrayOutputStream()
     val objectOutput = new ObjectOutputStream(byteArrayStream)
     objectOutput.writeUTF(str)
     byteArrayStream.toByteArray
   }
-  
+
   inline given Decoder[MktDataType] =
     summon[Decoder[Int]].map(MktDataType.fromOrdinal)
 
@@ -42,9 +70,7 @@ object TypesCodec:
     )
 
   inline given Encoder[Method] =
-    summon[Encoder[String]].contramap(method =>
-      if method == Method.Ignored then "" else method.toString
-    )
+    summon[Encoder[String]].contramap(method => if method == Method.Ignored then "" else method.toString)
 
   inline given Encoder[TriggerMethod] =
     summon[Encoder[Int]].contramap(_.value)

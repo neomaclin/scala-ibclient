@@ -5,7 +5,6 @@ import org.quasigroup.ibclient.types.Decimal
 
 import cats.data.{IndexedStateT, StateT}
 import scala.reflect.ClassTag
-//import cats.mtl.syntax.state
 
 import scala.compiletime.summonFrom
 import scala.deriving.Mirror
@@ -16,20 +15,16 @@ object Decoder {
   type ThrowableOr[A] = Either[Throwable, A]
   type DecoderState[T] = StateT[ThrowableOr, Array[String], T]
 
-
   inline def decode[A: Decoder](entry: Array[String]): Either[Throwable, A] =
     summon[Decoder[A]](entry)
 
-  inline given Decoder[String] = (entry: Array[String]) =>
-    entry.headOption.toRight(new Exception("nothing to decode"))
+  inline given Decoder[String] = (entry: Array[String]) => entry.headOption.toRight(new Exception("nothing to decode"))
 
-  inline given Decoder[Long] = summon[Decoder[String]].flatMap(value =>
-    if value.isEmpty then Right(Long.MaxValue) else Try(value.toLong).toEither
-  )
+  inline given Decoder[Long] =
+    summon[Decoder[String]].flatMap(value => if value.isEmpty then Right(Long.MaxValue) else Try(value.toLong).toEither)
 
-  inline given Decoder[Int] = summon[Decoder[String]].flatMap(value =>
-    if value.isEmpty then Right(Int.MaxValue) else Try(value.toInt).toEither
-  )
+  inline given Decoder[Int] =
+    summon[Decoder[String]].flatMap(value => if value.isEmpty then Right(Int.MaxValue) else Try(value.toInt).toEither)
 
   inline given Decoder[Boolean] = summon[Decoder[Int]].map(_ != 0)
 
@@ -70,24 +65,26 @@ object Decoder {
   //         .map(mirror.fromProduct)
   //   }
 
-   
   inline def readNothing[T: ClassTag](default: T): DecoderState[T] =
     StateT(array => Right(array -> default))
 
   inline def read[T: Decoder]: DecoderState[T] =
     StateT(array => summon[Decoder[T]](array).map(array.tail -> _))
 
-
   inline given decodeProduct[T](using mirror: Mirror.ProductOf[T]): Decoder[T] =
     new Decoder[T] {
       final def apply(entry: Array[String]): Either[Throwable, T] =
-        summonAll[mirror.MirroredElemTypes].iterator.foldRight(readNothing[Tuple](EmptyTuple)){
-          (e, state) =>
+        summonAll[mirror.MirroredElemTypes].iterator
+          .foldLeft(readNothing[Tuple](EmptyTuple)) { (state, e) =>
             for
               product <- state
-              item <- StateT[ThrowableOr, Array[String],Any](array =>  e.asInstanceOf[Decoder[Any]](array).map(array.tail -> _))
-            yield item *: product
-        }.runA(entry).map(mirror.fromProduct)
+              item <- StateT[ThrowableOr, Array[String], Any](array =>
+                e.asInstanceOf[Decoder[Any]].apply(array).map(array.tail -> _)
+              )
+            yield product :* item
+          }
+          .runA(entry)
+          .map(mirror.fromProduct)
     }
 
 }
@@ -96,8 +93,7 @@ trait Decoder[A] { self =>
 
   def apply(entry: Array[String]): Either[Throwable, A]
 
-  final def map[B](f: A => B): Decoder[B] = (entry: Array[String]) =>
-    self.apply(entry).map(f)
+  final def map[B](f: A => B): Decoder[B] = (entry: Array[String]) => self.apply(entry).map(f)
   final def flatMap[B](f: A => Either[Throwable, B]): Decoder[B] =
     (entry: Array[String]) => self.apply(entry).flatMap(f)
 }

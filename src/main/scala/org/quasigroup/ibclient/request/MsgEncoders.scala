@@ -47,15 +47,14 @@ object MsgEncoders:
           if a.contract.secType == SecType.BAG then
             for
               _ <- write(a.contract.comboLegs.size)
-              _ <- a.contract.comboLegs.foldLeft(writeNothing) {
-                (lastWritten, comboLeg) =>
-                  for
-                    _ <- lastWritten
-                    _ <- write(comboLeg.conId)
-                    _ <- write(comboLeg.ratio)
-                    _ <- write(comboLeg.action)
-                    _ <- write(comboLeg.exchange)
-                  yield ()
+              _ <- a.contract.comboLegs.foldLeft(writeNothing) { (lastWritten, comboLeg) =>
+                for
+                  _ <- lastWritten
+                  _ <- write(comboLeg.conId)
+                  _ <- write(comboLeg.ratio)
+                  _ <- write(comboLeg.action)
+                  _ <- write(comboLeg.exchange)
+                yield ()
               }
             yield ()
           else writeNothing
@@ -224,31 +223,28 @@ object MsgEncoders:
           if a.contract.secType == SecType.BAG then
             for
               _ <- write(a.contract.comboLegs.size)
-              _ <- a.contract.comboLegs.foldLeft(writeNothing) {
-                (buffer, comboLeg) =>
-                  for
-                    _ <- buffer
-                    _ <- write(comboLeg.conId)
-                    _ <- write(comboLeg.ratio)
-                    _ <- write(comboLeg.action)
-                    _ <- write(comboLeg.exchange)
-                    _ <- write(comboLeg.openClose)
-                    _ <- write(comboLeg.shortSaleSlot)
-                    _ <- write(comboLeg.designatedLocation)
-                    _ <- write(comboLeg.exemptCode)
-                  yield ()
+              _ <- a.contract.comboLegs.foldLeft(writeNothing) { (buffer, comboLeg) =>
+                for
+                  _ <- buffer
+                  _ <- write(comboLeg.conId)
+                  _ <- write(comboLeg.ratio)
+                  _ <- write(comboLeg.action)
+                  _ <- write(comboLeg.exchange)
+                  _ <- write(comboLeg.openClose)
+                  _ <- write(comboLeg.shortSaleSlot)
+                  _ <- write(comboLeg.designatedLocation)
+                  _ <- write(comboLeg.exemptCode)
+                yield ()
               }
               _ <- write(a.order.orderComboLegs.size)
-              _ <- a.order.orderComboLegs.foldLeft(writeNothing) {
-                (buffer, comboLeg) =>
-                  buffer.flatMap(_ => write(comboLeg.price))
+              _ <- a.order.orderComboLegs.foldLeft(writeNothing) { (buffer, comboLeg) =>
+                buffer.flatMap(_ => write(comboLeg.price))
               }
               _ <- write(a.order.smartComboRoutingParams.size)
-              _ <- a.order.smartComboRoutingParams.foldLeft(writeNothing) {
-                (buffer, tagValue) =>
-                  buffer
-                    .flatMap(_ => write(tagValue.tag))
-                    .flatMap(_ => write(tagValue.value))
+              _ <- a.order.smartComboRoutingParams.foldLeft(writeNothing) { (buffer, tagValue) =>
+                buffer
+                  .flatMap(_ => write(tagValue.tag))
+                  .flatMap(_ => write(tagValue.value))
               }
             yield ()
           else writeNothing
@@ -392,9 +388,7 @@ object MsgEncoders:
 
         _ <-
           if a.order.conditions.size > 0 then
-            write(a.order.conditionsIgnoreRth).flatMap(_ =>
-              write(a.order.adjustedOrderType)
-            )
+            write(a.order.conditionsIgnoreRth).flatMap(_ => write(a.order.adjustedOrderType))
           else writeNothing
         _ <- write(a.order.adjustedOrderType)
         _ <- write(a.order.triggerPrice)
@@ -425,16 +419,11 @@ object MsgEncoders:
           else writeNothing
         _ <-
           if a.order.orderType == Order.Type.PEG_BEST then
-            write(a.order.minCompeteSize).flatMap(_ =>
-              write(a.order.competeAgainstBestOffset)
-            )
+            write(a.order.minCompeteSize).flatMap(_ => write(a.order.competeAgainstBestOffset))
           else writeNothing
         _ <-
           if (a.order.orderType == Order.Type.PEG_BEST && a.order.isCompeteAgainstBestOffsetUpToMid) || a.order.orderType == Order.Type.PEG_MID
-          then
-            write(a.order.midOffsetAtWhole).flatMap(_ =>
-              write(a.order.midOffsetAtHalf)
-            )
+          then write(a.order.midOffsetAtWhole).flatMap(_ => write(a.order.midOffsetAtHalf))
           else writeNothing
       yield ()).runS(mutable.Buffer.empty).value
   end given
