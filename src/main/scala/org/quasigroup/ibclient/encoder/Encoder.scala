@@ -5,12 +5,19 @@ import org.quasigroup.ibclient.types.value
 import fs2.Chunk
 import scodec.bits.Literals.Utf8
 
+import cats.data.State
+import scala.collection.mutable
+
 import scala.collection.mutable
 import scala.compiletime.summonFrom
 import scala.deriving.Mirror
 import scala.compiletime.{erasedValue, summonInline}
 
 object Encoder:
+
+
+  type EncoderState = State[mutable.Buffer[Byte], Unit]
+
 
   inline given Encoder[String] = _.getBytes.toBuffer.+=(0)
 
@@ -66,10 +73,19 @@ object Encoder:
       case s: Mirror.SumOf[T]     => encoderSimplySum(s)
       case p: Mirror.ProductOf[T] => encoderProduct(p, encoders)
 
+
   inline given encodelist[T](using encoder: Encoder[T]): Encoder[List[T]] =
     new Encoder[List[T]]:
       def apply(t: List[T]): mutable.Buffer[Byte] =
         t.foldLeft(mutable.Buffer.empty)(_ ++ encoder(_))
+
+  val writeNothing: EncoderState = State(_ -> ())
+
+  inline def writeRaw(bytes: Array[Byte]): EncoderState = State(buffer => (buffer ++ bytes) -> ())
+
+  inline def write[T: Encoder](value: T): EncoderState =
+    State(buffer => (buffer ++ summon[Encoder[T]](value)) -> ())
+     
 
 end Encoder
 

@@ -1,12 +1,11 @@
 package org.quasigroup.ibclient.request
 
 import RequestMsg.*
-import MsgWriter.*
 import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.types.*
 import org.quasigroup.ibclient.types.TypesCodec.{*, given}
 import org.quasigroup.ibclient.encoder.Encoder
-import org.quasigroup.ibclient.encoder.Encoder.given
+import org.quasigroup.ibclient.encoder.Encoder.{*, given}
 import cats.MonadThrow
 import cats.syntax.try_.*
 
@@ -37,7 +36,7 @@ object MsgEncoders:
         _ <- write(a.msgId)
         _ <- write(a.version)
         _ <- write(a.tickerId)
-        _ <- write(a.contract)
+        _ <- writeC(a.contract)
         _ <- write(a.endDateTime)
         _ <- write(a.barSizeSetting)
         _ <- write(a.durationStr)
@@ -71,7 +70,7 @@ object MsgEncoders:
         _ <- write(a.msgId)
         _ <- write(a.version)
         _ <- write(a.tickerId)
-        _ <- write(a.contract)
+        _ <- writeC(a.contract)
         _ <- write(a.barSize)
         _ <- write(a.whatToShow)
         _ <- write(a.useRTH)
@@ -84,7 +83,7 @@ object MsgEncoders:
       (for {
         _ <- write(a.msgId)
         _ <- write(a.version)
-        _ <- write(a.contract)
+        _ <- writeC(a.contract)
         _ <- write(a.contract.includeExpired)
         _ <- write(a.contract.secIdType)
         _ <- write(a.contract.secId)
@@ -98,7 +97,7 @@ object MsgEncoders:
         _ <- write(a.msgId)
         _ <- write(a.version)
         _ <- write(a.tickerId)
-        _ <- write(a.contract)
+        _ <- writeC(a.contract)
         _ <- write(a.numRows)
         _ <- write(a.isSmartDepth)
         _ <- write(a.mktDepthOptions)
@@ -111,7 +110,7 @@ object MsgEncoders:
         _ <- write(a.msgId)
         _ <- write(a.version)
         _ <- write(a.tickerId)
-        _ <- write(a.contract)
+        _ <- writeC(a.contract)
         _ <- a.contract.deltaNeutralContract match
           case Some(deltaNeutralContract) =>
             write(true).flatMap(_ => write(deltaNeutralContract))
@@ -129,7 +128,7 @@ object MsgEncoders:
       (for
         _ <- write(a.msgId)
         _ <- write(a.reqId)
-        _ <- write(a.contract)
+        _ <- writeC(a.contract)
         _ <- write(a.tickType)
         _ <- write(a.numberOfTicks)
         _ <- write(a.ignoreSize)
@@ -160,7 +159,7 @@ object MsgEncoders:
         _ <- write(a.msgId)
         _ <- write(a.version)
         _ <- write(a.reqId)
-        _ <- write(a.contract)
+        _ <- writeC(a.contract)
         _ <- write(a.optionPrice)
         _ <- write(a.underPrice)
         _ <- write(a.impliedVolatilityOptions)
@@ -173,7 +172,7 @@ object MsgEncoders:
         _ <- write(a.msgId)
         _ <- write(a.version)
         _ <- write(a.reqId)
-        _ <- write(a.contract)
+        _ <- writeC(a.contract)
         _ <- write(a.volatility)
         _ <- write(a.underPrice)
         _ <- write(a.optionPriceOptions)
@@ -186,7 +185,7 @@ object MsgEncoders:
         _ <- write(a.msgId)
         _ <- write(a.version)
         _ <- write(a.tickerId)
-        _ <- write(a.contract)
+        _ <- writeC(a.contract)
         _ <- write(a.exerciseAction)
         _ <- write(a.exerciseQuantity)
         _ <- write(a.account)
@@ -199,7 +198,7 @@ object MsgEncoders:
       (for
         _ <- write(a.msgId)
         _ <- write(a.id)
-        _ <- write(a.contract)
+        _ <- writeC(a.contract)
         _ <- write(a.contract.secIdType)
         _ <- write(a.contract.secId)
         _ <- write(a.order.action)
@@ -440,19 +439,20 @@ object MsgEncoders:
       yield ()).runS(mutable.Buffer.empty).value
   end given
 
-end MsgEncoders
+  inline def writeC(contract: Contract): EncoderState =
+    for
+      _ <- write(contract.conId)
+      _ <- write(contract.symbol)
+      _ <- write(contract.secType)
+      _ <- write(contract.lastTradeDateOrContractMonth)
+      _ <- write(contract.strike)
+      _ <- write(contract.right)
+      _ <- write(contract.multiplier)
+      _ <- write(contract.exchange)
+      _ <- write(contract.primaryExch)
+      _ <- write(contract.currency)
+      _ <- write(contract.localSymbol)
+      _ <- write(contract.tradingClass)
+    yield ()
 
-//trait MsgEncoder[A] extends Encoder[A] { self =>
-//
-//  final def apply(a: A): mutable.Buffer[Byte] =
-//    this(a)(using IBClient.MAX_VERSION)
-//  def apply(a: A)(using
-//      serverVersion: IBClient.ServerVersion
-//  ): mutable.Buffer[Byte]
-//
-//  override def contramap[B](f: B => A): Encoder[B] = new MsgEncoder[B] {
-//    final def apply(a: B)(using
-//        serverVersion: IBClient.ServerVersion
-//    ): mutable.Buffer[Byte] = self(f(a))(using serverVersion)
-//  }
-//}
+end MsgEncoders

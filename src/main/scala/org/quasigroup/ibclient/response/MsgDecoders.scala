@@ -1,7 +1,6 @@
 package org.quasigroup.ibclient.response
 
 import MsgId.*
-import MsgReader.*
 import org.quasigroup.ibclient.exceptions.EClientErrors
 import org.quasigroup.ibclient.types.*
 import org.quasigroup.ibclient.types.TypesCodec.{*, given}
@@ -83,151 +82,141 @@ object MsgDecoders:
       createUpdatePortfolio.runA(entry)
 
   inline given Decoder[TickPrice] with
-    def apply(
-        entry: Array[String]
-    ): Either[Throwable, TickPrice] =
-      partiallyApply(
-        entry,
-        {
-          case Array(
-                version,
-                tickerId,
-                tickType,
-                price,
-                rest: _*
-              ) =>
-            val versionInt = version.toInt
-            val tickerIdInt = tickerId.toInt
-            val tickTypeInt = tickType.toInt
-            val size =
-              if versionInt >= 2 then
-                Decimal.parse(rest.head).getOrElse(Decimal.INVALID)
-              else Decimal.INVALID
-            val nextMsgs = if versionInt >= 2 then rest.tail else rest
-            val attribs =
-              if versionInt >= 3 then
-                val mask = BitMask(nextMsgs.head.toInt)
-                TickAttrib(
-                  canAutoExecute = mask.get(0),
-                  pastLimit = mask.get(1),
-                  preOpen = mask.get(2)
-                )
-              else TickAttrib()
-            val optionalSizeTickType =
-              if versionInt >= 2 then
-                tickTypeInt match
-                  case 1  => TickType.BID_SIZE.some
-                  case 2  => TickType.ASK_SIZE.some
-                  case 4  => TickType.LAST_SIZE.some
-                  case 66 => TickType.DELAYED_BID_SIZE.some
-                  case 67 => TickType.DELAYED_ASK_SIZE.some
-                  case 68 => TickType.DELAYED_LAST_SIZE.some
-                  case _  => None
-              else None
-            Right(
-              TickPrice(
-                tickerIdInt,
-                TickType.fromOrdinal(tickTypeInt),
-                price.toDouble,
-                attribs,
-                optionalSizeTickType.map(TickSize(tickerIdInt, _, size))
+    private val createTickPice: DecoderState[TickPrice] =
+      for
+        version <- read[Int]
+        tickerId <- read[Int]
+        tickType <- read[TickType]
+        price <- read[Double]
+        size <-
+          if version >= 2 then read[Decimal] else readNothing(Decimal.INVALID)
+        tickAttrib <-
+          if version >= 3 then
+            read[Int].map { attrMask =>
+              val mask = BitMask(attrMask)
+              TickAttrib(
+                canAutoExecute = mask.get(0),
+                pastLimit = mask.get(1),
+                preOpen = mask.get(2)
               )
-            )
-
-        }
-      )
-
+            }
+          else readNothing(TickAttrib())
+      yield {
+        val optionalSizeTickType =
+          if version >= 2 then
+            tickType match
+              case TickType.BID          => TickType.BID_SIZE.some
+              case TickType.ASK          => TickType.ASK_SIZE.some
+              case TickType.LAST         => TickType.LAST_SIZE.some
+              case TickType.DELAYED_BID  => TickType.DELAYED_BID_SIZE.some
+              case TickType.DELAYED_ASK  => TickType.DELAYED_ASK_SIZE.some
+              case TickType.DELAYED_LAST => TickType.DELAYED_LAST_SIZE.some
+              case _                     => None
+          else None
+        TickPrice(
+          tickerId,
+          tickType,
+          price,
+          tickAttrib,
+          optionalSizeTickType.map(TickSize(tickerId, _, size))
+        )
+      }
+    override def apply(
+        entry: Array[String]
+    ): Either[Throwable, TickPrice] = createTickPice.runA(entry)
   end given
 
-  inline given Decoder[TickOptionComputation] with
-    def apply(
-        entry: Array[String]
-    ): Either[Throwable, TickOptionComputation] =
-      partiallyApply(
-        entry,
-        {
-          case Array(
-                version,
-                tickerId,
-                tickType,
-                impliedVol,
-                delta,
-                rest: _*
-              ) =>
-            val versionInt = version.toInt
-            val tickerIdInt = tickerId.toInt
-            val tickTypeEnum = TickType.fromOrdinal(tickType.toInt)
-            val impliedVolDouble = Try(impliedVol.toDouble)
-              .filter(_ != -1)
-              .getOrElse(Double.MaxValue)
-            val deltaDouble =
-              Try(delta.toDouble).filter(_ != -2).getOrElse(Double.MaxValue)
-            val (optPriceDouble, pvDividendDouble, otherRest) =
-              if (
-                versionInt >= 6 || tickTypeEnum == TickType.MODEL_OPTION || tickTypeEnum == TickType.DELAYED_MODEL_OPTION
-              )
-              then
-                rest.toArray match
-                  case Array(optPrice, pvDividend, remaining: _*) =>
-                    val optPriceDouble = Try(optPrice.toDouble)
-                      .filter(_ != -1)
-                      .getOrElse(Double.MaxValue)
-                    val pvDividendDouble = Try(pvDividend.toDouble)
-                      .filter(_ != -1)
-                      .getOrElse(Double.MaxValue)
-                    (optPriceDouble, pvDividendDouble, remaining)
-                  case _ => (Double.MaxValue, Double.MaxValue, rest)
-              else (Double.MaxValue, Double.MaxValue, rest)
-            val (gammaDouble, vegaDouble, thetaDouble, undPriceDouble) =
-              if (versionInt >= 6) then
-                rest.toArray match
-                  case Array(gamma, vega, theta, undPrice) =>
-                    val gammaDouble = Try(gamma.toDouble)
-                      .filter(_ != -2)
-                      .getOrElse(Double.MaxValue)
-                    val vegaDouble = Try(vega.toDouble)
-                      .filter(_ != -2)
-                      .getOrElse(Double.MaxValue)
-                    val thetaDouble = Try(theta.toDouble)
-                      .filter(_ != -2)
-                      .getOrElse(Double.MaxValue)
-                    val undPriceDouble = Try(undPrice.toDouble)
-                      .filter(_ != -1)
-                      .getOrElse(Double.MaxValue)
-                    (gammaDouble, vegaDouble, thetaDouble, undPriceDouble)
-                  case _ =>
-                    (
-                      Double.MaxValue,
-                      Double.MaxValue,
-                      Double.MaxValue,
-                      Double.MaxValue
-                    )
-              else
-                (
-                  Double.MaxValue,
-                  Double.MaxValue,
-                  Double.MaxValue,
-                  Double.MaxValue
-                )
-            Right(
-              TickOptionComputation(
-                tickerIdInt,
-                tickTypeEnum,
-                impliedVolDouble,
-                deltaDouble,
-                optPriceDouble,
-                pvDividendDouble,
-                gammaDouble,
-                vegaDouble,
-                thetaDouble,
-                undPriceDouble
-              )
-            )
+  // inline given Decoder[TickOptionComputation] with
+  //   private val createTickOptionComputation =
 
-        }
-      )
+  //   def apply(
+  //       entry: Array[String]
+  //   ): Either[Throwable, TickOptionComputation] =
+  //     // partiallyApply(
+  //     //   entry,
+  //     //   {
+  //     //     case Array(
+  //     //           version,
+  //     //           tickerId,
+  //     //           tickType,
+  //     //           impliedVol,
+  //     //           delta,
+  //     //           rest: _*
+  //     //         ) =>
+  //     //       val versionInt = version.toInt
+  //     //       val tickerIdInt = tickerId.toInt
+  //     //       val tickTypeEnum = TickType.fromOrdinal(tickType.toInt)
+  //     //       val impliedVolDouble = Try(impliedVol.toDouble)
+  //     //         .filter(_ != -1)
+  //     //         .getOrElse(Double.MaxValue)
+  //     //       val deltaDouble =
+  //     //         Try(delta.toDouble).filter(_ != -2).getOrElse(Double.MaxValue)
+  //     //       val (optPriceDouble, pvDividendDouble, otherRest) =
+  //     //         if (
+  //     //           versionInt >= 6 || tickTypeEnum == TickType.MODEL_OPTION || tickTypeEnum == TickType.DELAYED_MODEL_OPTION
+  //     //         )
+  //     //         then
+  //     //           rest.toArray match
+  //     //             case Array(optPrice, pvDividend, remaining: _*) =>
+  //     //               val optPriceDouble = Try(optPrice.toDouble)
+  //     //                 .filter(_ != -1)
+  //     //                 .getOrElse(Double.MaxValue)
+  //     //               val pvDividendDouble = Try(pvDividend.toDouble)
+  //     //                 .filter(_ != -1)
+  //     //                 .getOrElse(Double.MaxValue)
+  //     //               (optPriceDouble, pvDividendDouble, remaining)
+  //     //             case _ => (Double.MaxValue, Double.MaxValue, rest)
+  //     //         else (Double.MaxValue, Double.MaxValue, rest)
+  //     //       val (gammaDouble, vegaDouble, thetaDouble, undPriceDouble) =
+  //     //         if (versionInt >= 6) then
+  //     //           rest.toArray match
+  //     //             case Array(gamma, vega, theta, undPrice) =>
+  //     //               val gammaDouble = Try(gamma.toDouble)
+  //     //                 .filter(_ != -2)
+  //     //                 .getOrElse(Double.MaxValue)
+  //     //               val vegaDouble = Try(vega.toDouble)
+  //     //                 .filter(_ != -2)
+  //     //                 .getOrElse(Double.MaxValue)
+  //     //               val thetaDouble = Try(theta.toDouble)
+  //     //                 .filter(_ != -2)
+  //     //                 .getOrElse(Double.MaxValue)
+  //     //               val undPriceDouble = Try(undPrice.toDouble)
+  //     //                 .filter(_ != -1)
+  //     //                 .getOrElse(Double.MaxValue)
+  //     //               (gammaDouble, vegaDouble, thetaDouble, undPriceDouble)
+  //     //             case _ =>
+  //     //               (
+  //     //                 Double.MaxValue,
+  //     //                 Double.MaxValue,
+  //     //                 Double.MaxValue,
+  //     //                 Double.MaxValue
+  //     //               )
+  //     //         else
+  //     //           (
+  //     //             Double.MaxValue,
+  //     //             Double.MaxValue,
+  //     //             Double.MaxValue,
+  //     //             Double.MaxValue
+  //     //           )
+  //     //       Right(
+  //     //         TickOptionComputation(
+  //     //           tickerIdInt,
+  //     //           tickTypeEnum,
+  //     //           impliedVolDouble,
+  //     //           deltaDouble,
+  //     //           optPriceDouble,
+  //     //           pvDividendDouble,
+  //     //           gammaDouble,
+  //     //           vegaDouble,
+  //     //           thetaDouble,
+  //     //           undPriceDouble
+  //     //         )
+  //     //       )
 
-  end given
+  //     //   }
+  //     // )
+
+  // end given
 
   inline given Decoder[PositionMsg] with
     private val createPositionMsg: DecoderState[PositionMsg] =
@@ -374,15 +363,22 @@ object MsgDecoders:
   end given
 
   inline given Decoder[DeltaNeutralValidation] with
-    private val createDeltaNeutralValidation: DecoderState[DeltaNeutralValidation] =
+    private val createDeltaNeutralValidation
+        : DecoderState[DeltaNeutralValidation] =
       for
         reqId <- read[Int]
-        deltaNeutralContract <- read[DeltaNeutralContract]
-      yield DeltaNeutralValidation(reqId, deltaNeutralContract)
+        conid <- read[Int]
+        delta <- read[Double]
+        price <- read[Double]
+      yield DeltaNeutralValidation(
+        reqId,
+        DeltaNeutralContract(conid, delta, price)
+      )
 
     def apply(
         entry: Array[String]
-    ): Either[Throwable, DeltaNeutralValidation] = createDeltaNeutralValidation.runA(entry)
+    ): Either[Throwable, DeltaNeutralValidation] =
+      createDeltaNeutralValidation.runA(entry)
   end given
 
   inline given Decoder[HistoricalTicks] with
