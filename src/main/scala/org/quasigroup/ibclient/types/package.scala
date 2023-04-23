@@ -51,21 +51,21 @@ final case class Contract(
 
 final case class ContractDetails(
     contract: Contract,
-    marketName: String,
-    minTick: Double,
-    orderTypes: String,
-    validExchanges: String,
-    underConId: Int,
-    longName: String,
-    contractMonth: String,
-    industry: String,
-    category: String,
-    subcategory: String,
-    timeZoneId: String,
-    tradingHours: String,
-    liquidHours: String,
-    evRule: String,
-    evMultiplier: Double
+    marketName: String = "",
+    minTick: Double = Double.MaxValue,
+    orderTypes: String = "",
+    validExchanges: String = "",
+    underConId: Int = 0,
+    longName: String = "",
+    contractMonth: String = "",
+    industry: String  = "",
+    category: String  = "",
+    subcategory: String  = "",
+    timeZoneId: String  = "",
+    tradingHours: String  = "",
+    liquidHours: String  = "",
+    evRule: String  = "",
+    evMultiplier: Double = Double.MaxValue
 )
 final case class ContractDescription(
     contract: Contract,
