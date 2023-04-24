@@ -2,7 +2,7 @@ package org.quasigroup.ibclient.response.readers
 
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.HistoricalTicksLast
-import org.quasigroup.ibclient.types.{HistoricalTickLast, TickAttribLast,Decimal}
+import org.quasigroup.ibclient.types.{HistoricalTickLast, TickAttribLast, Decimal}
 
 object HistoricalTicksLastReader {
   val create: DecoderState[HistoricalTicksLast] =

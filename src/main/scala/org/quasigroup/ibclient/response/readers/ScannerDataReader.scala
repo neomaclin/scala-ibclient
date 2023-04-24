@@ -41,24 +41,24 @@ object ScannerDataReader {
               symbol = symbol,
               secType = secType,
               lastTradeDateOrContractMonth = lastTradeDateOrContractMonth,
-              strike = strike ,
-              right = right ,
-              multiplier = multiplier ,
-              exchange = exchange ,
-              currency = currency ,
-              localSymbol = localSymbol ,
-              tradingClass = tradingClass 
-            ) 
+              strike = strike,
+              right = right,
+              multiplier = multiplier,
+              exchange = exchange,
+              currency = currency,
+              localSymbol = localSymbol,
+              tradingClass = tradingClass
+            )
             val contractDetails = ContractDetails(
-              contract = contract ,
-              marketName = marketName 
+              contract = contract,
+              marketName = marketName
             )
             ScannerDataElement(
-              rank = rank ,
-              contractDetails = contractDetails ,
-              distance = distance ,
-              benchmark = benchmark ,
-              projection = projection ,
+              rank = rank,
+              contractDetails = contractDetails,
+              distance = distance,
+              benchmark = benchmark,
+              projection = projection,
               legsStr = legsStr
             ) :: list
           }

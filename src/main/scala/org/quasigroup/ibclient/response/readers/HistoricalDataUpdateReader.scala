@@ -2,7 +2,7 @@ package org.quasigroup.ibclient.response.readers
 
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read}
 import org.quasigroup.ibclient.response.ResponseMsg.HistoricalDataUpdate
-import org.quasigroup.ibclient.types.{Bar,Decimal}
+import org.quasigroup.ibclient.types.{Bar, Decimal}
 
 object HistoricalDataUpdateReader {
   val create: DecoderState[HistoricalDataUpdate] =

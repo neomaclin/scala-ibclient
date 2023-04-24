@@ -53,19 +53,47 @@ final case class ContractDetails(
     contract: Contract,
     marketName: String = "",
     minTick: Double = Double.MaxValue,
+    priceMagnifier: Int = 0,
     orderTypes: String = "",
     validExchanges: String = "",
     underConId: Int = 0,
     longName: String = "",
     contractMonth: String = "",
-    industry: String  = "",
-    category: String  = "",
-    subcategory: String  = "",
-    timeZoneId: String  = "",
-    tradingHours: String  = "",
-    liquidHours: String  = "",
-    evRule: String  = "",
-    evMultiplier: Double = Double.MaxValue
+    industry: String = "",
+    category: String = "",
+    subcategory: String = "",
+    timeZoneId: String = "",
+    tradingHours: String = "",
+    liquidHours: String = "",
+    evRule: String = "",
+    evMultiplier: Double = Double.MaxValue,
+    secIdList: List[TagValue] = Nil,
+    aggGroup: Int = 0,
+    underSymbol: String = "",
+    underSecType: SecType = SecType.Ignored,
+    marketRuleIds: String = "",
+    realExpirationDate: String = "",
+    lastTradeTime: String = "",
+    stockType: String = "",
+    minSize: Decimal = Decimal.INVALID,
+    sizeIncrement: Decimal = Decimal.INVALID,
+    suggestedSizeIncrement: Decimal = Decimal.INVALID,
+    // BOND VALUES
+    cusip: String = "",
+    ratings: String = "",
+    descAppend: String = "",
+    bondType: String = "",
+    couponType: String = "",
+    callable: Boolean = false,
+    putable: Boolean = false,
+    coupon: Double = 0,
+    convertible: Boolean = false,
+    maturity: String = "",
+    issueDate: String = "",
+    nextOptionDate: String = "",
+    nextOptionType: String = "",
+    nextOptionPartial: Boolean = false,
+    notes: String = ""
 )
 final case class ContractDescription(
     contract: Contract,
@@ -399,22 +427,24 @@ enum Liquidities:
   case Ignored, Added, Removed, RoudedOut
 
 final case class Execution(
-    orderId: Int,
-    clientId: Int,
-    execId: String,
-    time: String,
-    acctNumber: String,
-    exchange: String,
-    side: String,
-    shares: Int,
-    price: Double,
-    permId: Int,
-    liquidation: Liquidities,
-    cumQty: Int,
-    avgPrice: Double,
-    orderRef: String,
-    evRule: String,
-    evMultiplier: Double
+    orderId: Int = 0,
+    clientId: Int = 0,
+    execId: String = "",
+    time: String = "",
+    acctNumber: String = "",
+    exchange: String = "",
+    side: String = "",
+    shares: Decimal = Decimal.ZERO,
+    price: Double = 0.0,
+    permId: Int = 0,
+    liquidation: Int = 0,
+    cumQty: Decimal = Decimal.ZERO,
+    avgPrice: Double = 0.0,
+    orderRef: String = "",
+    evRule: String = "",
+    evMultiplier: Double = 0.0,
+    modelCode: String = "",
+    lastLiquidity: Liquidities = Liquidities.Ignored
 )
 
 final case class ExecutionFilter(
@@ -788,7 +818,7 @@ final case class Profile(
     allocations: List[Profile.Allocation]
 )
 
-final case class TradeId(private val id: String) {
+final case class TradeId(val id: String) {
   def full: String = id
   def key: String = id.split("\\.").head
 }

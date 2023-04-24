@@ -2,11 +2,11 @@ package org.quasigroup.ibclient.response.readers
 
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg
-import org.quasigroup.ibclient.response.ResponseMsg.{TickByTickAllLast,TickByTickBidAsk,TickByTickMidPoint,Skip}
-import org.quasigroup.ibclient.types.{TickAttribBidAsk,TickAttribLast, Decimal}
+import org.quasigroup.ibclient.response.ResponseMsg.{TickByTickAllLast, TickByTickBidAsk, TickByTickMidPoint, Skip}
+import org.quasigroup.ibclient.types.{TickAttribBidAsk, TickAttribLast, Decimal}
 import org.quasigroup.ibclient.types.TypesCodec.given
 
-object TickByTicksReader{
+object TickByTicksReader {
   val create: DecoderState[ResponseMsg] =
     for
       reqId <- read[Int]
@@ -48,7 +48,7 @@ object TickByTicksReader{
           )
         case 4 =>
           for midPoint <- read[Double]
-            yield TickByTickMidPoint(reqId, time, midPoint)
+          yield TickByTickMidPoint(reqId, time, midPoint)
         case _ => readNothing(Skip)
     yield tickByTickMsg
 }

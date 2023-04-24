@@ -1,6 +1,6 @@
 package org.quasigroup.ibclient.request.writers
 
-import org.quasigroup.ibclient.encoder.Encoder.{EncoderState,write,given}
+import org.quasigroup.ibclient.encoder.Encoder.{EncoderState, write, given}
 import org.quasigroup.ibclient.types.Contract
 
 object ContractWriter {

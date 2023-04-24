@@ -90,7 +90,7 @@ enum ResponseMsg:
 
   case NextValidId(orderId: Int) extends ResponseMsg
 
-  case ContractDetails(reqId: Int, contractDetails: ContractDetails) extends ResponseMsg
+  case ContractDetailsMsg(reqId: Int, contractDetails: ContractDetails) extends ResponseMsg
 
   case BondContractDetails(reqId: Int, contractDetails: ContractDetails) extends ResponseMsg
 
@@ -376,4 +376,4 @@ enum ResponseMsg:
 
   case SecurityDefinitionOptionalParameterEndMsg(reqId: Int) extends ResponseMsg
 
-  case Skip extends ResponseMsg 
+  case Skip extends ResponseMsg

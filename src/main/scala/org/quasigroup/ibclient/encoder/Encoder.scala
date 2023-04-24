@@ -39,10 +39,8 @@ object Encoder:
   inline def encoderSimplySum[T](
       s: Mirror.SumOf[T]
   ): Encoder[T] = new Encoder[T]:
-    def apply(t: T): mutable.Buffer[Byte] = {
-      val index = s.ordinal(t) // (2)
-      summon[Encoder[Int]](index)
-    }
+    def apply(t: T): mutable.Buffer[Byte] =
+      summon[Encoder[Int]](s.ordinal(t))
 
   inline def encoderProduct[T](
       p: Mirror.ProductOf[T],

@@ -46,13 +46,13 @@ object MsgEncoders:
 
   inline given Encoder[ReqFundamentalData] = ReqFundamentalDataWriter(_).runS(mutable.Buffer.empty).value
 
-  inline given Encoder[CalculateImpliedVolatility] = CalculateImpliedVolatilityWriter(_).runS(mutable.Buffer.empty).value
+  inline given Encoder[CalculateImpliedVolatility] =
+    CalculateImpliedVolatilityWriter(_).runS(mutable.Buffer.empty).value
 
   inline given Encoder[CalculateOptionPrice] = CalculateOptionPriceWriter(_).runS(mutable.Buffer.empty).value
 
   inline given Encoder[ExerciseOptions] = ExerciseOptionsWriter(_).runS(mutable.Buffer.empty).value
 
   inline given Encoder[PlaceOrder] = PlaceOrderWriter(_).runS(mutable.Buffer.empty).value
-
 
 end MsgEncoders

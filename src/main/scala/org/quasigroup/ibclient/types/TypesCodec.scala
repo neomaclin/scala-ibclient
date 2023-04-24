@@ -45,6 +45,8 @@ object TypesCodec:
     byteArrayStream.toByteArray
   }
 
+  inline given Decoder[Liquidities] = summon[Decoder[Int]].map(Liquidities.fromOrdinal)
+
   inline given Decoder[MktDataType] =
     summon[Decoder[Int]].map(MktDataType.fromOrdinal)
 

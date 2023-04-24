@@ -1,8 +1,7 @@
 package org.quasigroup.ibclient.request.writers
 
-import org.quasigroup.ibclient.encoder.Encoder.{EncoderState,write,given}
+import org.quasigroup.ibclient.encoder.Encoder.{EncoderState, write, given}
 import org.quasigroup.ibclient.request.RequestMsg.ReqFundamentalData
-
 
 object ReqFundamentalDataWriter {
   def apply(a: ReqFundamentalData): EncoderState =

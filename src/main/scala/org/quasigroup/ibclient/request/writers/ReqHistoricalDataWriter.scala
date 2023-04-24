@@ -1,7 +1,7 @@
 package org.quasigroup.ibclient.request.writers
 
 import org.quasigroup.ibclient.types.*
-import org.quasigroup.ibclient.encoder.Encoder.{* ,given}
+import org.quasigroup.ibclient.encoder.Encoder.{*, given}
 import org.quasigroup.ibclient.request.RequestMsg.ReqHistoricalData
 
 import scala.collection.mutable

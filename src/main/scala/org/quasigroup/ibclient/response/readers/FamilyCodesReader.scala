@@ -9,16 +9,14 @@ object FamilyCodesReader {
     for
       numberOfFamilyCode <- read[Int]
       familyCodes <-
-        if numberOfFamilyCode == 1 then readNothing(List.empty[FamilyCode])
-        else
-          (0 until numberOfFamilyCode).foldLeft(
-            readNothing(List.empty[FamilyCode])
-          ) { (state, idx) =>
-            for
-              list <- state
-              accountID <- read[String]
-              familyCodeStr <- read[String]
-            yield FamilyCode(accountID, familyCodeStr) :: list
-          }
+        (0 until numberOfFamilyCode).foldLeft(
+          readNothing(List.empty[FamilyCode])
+        ) { (state, idx) =>
+          for
+            list <- state
+            accountID <- read[String]
+            familyCodeStr <- read[String]
+          yield FamilyCode(accountID, familyCodeStr) :: list
+        }
     yield FamilyCodes(familyCodes.reverse)
 }
