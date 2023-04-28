@@ -1,11 +1,13 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read}
 import org.quasigroup.ibclient.response.ResponseMsg.HistoricalDataUpdate
 import org.quasigroup.ibclient.types.{Bar, Decimal}
 
 object HistoricalDataUpdateReader {
-  val create: DecoderState[HistoricalDataUpdate] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[HistoricalDataUpdate] =
     for
       reqId <- read[Int]
       barCount <- read[Int]

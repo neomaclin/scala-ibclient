@@ -1,11 +1,13 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.HistogramData
 import org.quasigroup.ibclient.types.{HistogramEntry, Decimal}
 
 object HistogramDataReader {
-  val create: DecoderState[HistogramData] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[HistogramData] =
     for
       reqId <- read[Int]
       nEntries <- read[Int]

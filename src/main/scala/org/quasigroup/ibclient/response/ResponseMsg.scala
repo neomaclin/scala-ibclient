@@ -43,7 +43,7 @@ enum ResponseMsg:
       dividendsToExpiry: Double
   ) extends ResponseMsg
 
-  case OrderStatus(
+  case OrderStatusMsg(
       orderId: Int,
       status: String,
       filled: Int,

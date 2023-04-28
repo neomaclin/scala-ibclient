@@ -27,6 +27,7 @@ import scodec.codecs.*
 
 import scala.concurrent.duration.DurationInt
 import scala.reflect.ClassTag
+import org.quasigroup.ibclient.response.MsgDecoders
 
 class IBSocketClientCats[F[_]: Async: Console](
     socket: Socket[F],
@@ -46,6 +47,7 @@ class IBSocketClientCats[F[_]: Async: Console](
 
   private def startMsgConsumption: F[Unit] =
     for
+      given ServerVersion <- _serverVersion.get
       msgQueue <- Queue.unbounded[F, ResponseMsg]
       msgTopic <- Topic[F, ResponseMsg]
       pushFiber <-
@@ -61,7 +63,7 @@ class IBSocketClientCats[F[_]: Async: Console](
           socket.reads
             .through(ibFramesString.toPipeByte)
             .evalTap(strs => Console[F].println(strs.mkString("[", ",", "]")))
-            .evalMap(Decoder.decode[ResponseMsg](_).liftTo[F])
+            .evalMap(MsgDecoders.decode(_).liftTo[F])
             .evalTap(Console[F].println)
             .takeThrough(_ != ConnectionClosed)
             .evalTap(msgQueue.offer)
@@ -159,7 +161,7 @@ class IBSocketClientCats[F[_]: Async: Console](
         .liftTo[F](
           new InvalidMessageLengthException("message empty")
         )
-      resp <- Decoder.decode[ConnectionAck](result).liftTo[F]
+      resp <- summon[Decoder[ConnectionAck]](result).liftTo[F]
       _ <- _clientId.complete(clientId)
       _ <- _serverVersion.complete(resp.serverVersion)
       _ <- startAPI

@@ -28,7 +28,7 @@ final case class ComboLeg(
 )
 
 final case class Contract(
-    conId: Int = 0,
+    conId: Int = -1,
     symbol: String,
     secType: SecType,
     lastTradeDateOrContractMonth: String = "",
@@ -56,7 +56,7 @@ final case class ContractDetails(
     priceMagnifier: Int = 0,
     orderTypes: String = "",
     validExchanges: String = "",
-    underConId: Int = 0,
+    underConId: Int = -1,
     longName: String = "",
     contractMonth: String = "",
     industry: String = "",
@@ -427,8 +427,8 @@ enum Liquidities:
   case Ignored, Added, Removed, RoudedOut
 
 final case class Execution(
-    orderId: Int = 0,
-    clientId: Int = 0,
+    orderId: Int = -1,
+    clientId: Int = -1,
     execId: String = "",
     time: String = "",
     acctNumber: String = "",
@@ -436,7 +436,7 @@ final case class Execution(
     side: String = "",
     shares: Decimal = Decimal.ZERO,
     price: Double = 0.0,
-    permId: Int = 0,
+    permId: Int = -1,
     liquidation: Int = 0,
     cumQty: Decimal = Decimal.ZERO,
     avgPrice: Double = 0.0,
@@ -488,10 +488,10 @@ final case class ScannerSubscription(
 
 final case class Order(
     // ids
-    clientId: Int = 0,
-    orderId: Int = 0,
-    permId: Int = 0,
-    parentId: Int = 0,
+    clientId: Int = -1,
+    orderId: Int = -1,
+    permId: Int = -1,
+    parentId: Int = -1,
     // primary attributes
     action: Action = Action.BUY,
     totalQuantity: Decimal = Decimal.INVALID,
@@ -512,8 +512,7 @@ final case class Order(
     outsideRth: Boolean = false,
     sweepToFill: Boolean = false,
     percentOffset: Double = Double.MaxValue,
-    trailingPercent: Double = Double.MaxValue,
-    trailStopPrice: Double = Double.MaxValue,
+    trailingParams: Order.TrailParams,
     minQty: Int = Int.MaxValue,
     goodAfterTime: String, // FORMAT: 20060505 08:00:00 EST
     goodTillDate: String, // FORMAT: 20060505 08:00:00 EST or 20060505
@@ -526,10 +525,7 @@ final case class Order(
     activeStartTime: String = "", // GTC orders
     activeStopTime: String = "", // GTC orders
     // advisor allocation orders
-    faGroup: String = "",
-    faMethod: Method = Method.Ignored,
-    faPercentage: String = "",
-    faProfile: String = "",
+    faParams: Option[Order.FAParams],
     // volatility orders
     volatility: Double = Double.MaxValue,
     volatilityType: VolatilityType = VolatilityType.Ignored,
@@ -537,7 +533,7 @@ final case class Order(
     referencePriceType: ReferencePriceType,
     deltaNeutralOrderType: Order.Type = Order.Type.Ignored,
     deltaNeutralAuxPrice: Double = Double.MaxValue,
-    deltaNeutralConId: Int = 0,
+    deltaNeutralConId: Int = -1,
     deltaNeutralOpenClose: String = "",
     deltaNeutralShortSale: Boolean = false,
     deltaNeutralShortSaleSlot: Int = 0,
@@ -584,15 +580,11 @@ final case class Order(
     // BOX or VOL ORDERS ONLY
     auctionStrategy: AuctionStrategy = AuctionStrategy.Ignored,
     // BOX ORDERS ONLY
-    startingPrice: Double = Double.MaxValue,
-    stockRefPrice: Double = Double.MaxValue,
-    delta: Double = Double.MaxValue,
+    boxOrder: Option[Order.BoxOrderParams],
     // pegged to stock or VOL orders
-    stockRangeLower: Double = Double.MaxValue,
-    stockRangeUpper: Double = Double.MaxValue,
+    pegToStkOrVolOrderParams: Option[Order.PegToStkOrVolOrderParams],
     // COMBO ORDERS ONLY
-    basisPoints: Double = Double.MaxValue,
-    basisPointsType: Int = Int.MaxValue,
+    basisPoints: Option[Order.BasisPoints],
     // Not Held
     notHeld: Boolean = false,
     // order misc options
@@ -602,9 +594,9 @@ final case class Order(
     randomizeSize: Boolean = false,
     randomizePrice: Boolean = false,
     // VER PEG2BENCH fields:
-    referenceContractId: Int = 0,
-    peggedChangeAmount: Double = 0.0,
+    referenceContractId: Int = -1,
     isPeggedChangeAmountDecrease: Boolean = false,
+    peggedChangeAmount: Double = 0.0,
     referenceChangeAmount: Double = 0.0,
     referenceExchangeId: String = "",
     adjustedOrderType: Order.Type = Order.Type.Ignored,
@@ -634,12 +626,12 @@ final case class Order(
     discretionaryUpToLimitPrice: Boolean = false,
     autoCancelDate: String = "",
     filledQuantity: Decimal = Decimal.INVALID,
-    refFuturesConId: Int = 0,
+    refFuturesConId: Int = -1,
     autoCancelParent: Boolean = false,
     shareholder: String = "",
     imbalanceOnly: Boolean = false,
     routeMarketableToBbo: Boolean = false,
-    parentPermId: Long = 0L,
+    parentPermId: Long = -1L,
     usePriceMgmtAlgo: UsePriceMgmtAlgo = UsePriceMgmtAlgo.Ignored,
     duration: Int = Int.MaxValue,
     postToAts: Int = Int.MaxValue,
@@ -715,15 +707,23 @@ object Order:
   final case class ComboLeg(price: Double)
 
   final case class State(
-      status: String,
-      initMargin: String,
-      maintMargin: String,
-      equityWithLoan: String,
+      status: Status,
+      initMarginBefore: String,
+      maintMarginBefore: String,
+      equityWithLoanBefore: String,
+      initMarginChange: String,
+      maintMarginChange: String,
+      equityWithLoanChange: String,
+      initMarginAfter: String,
+      maintMarginAfter: String,
+      equityWithLoanAfter: String,
       commission: Double,
       minCommission: Double,
       maxCommission: Double,
       commissionCurrency: String,
-      warningText: String
+      warningText: String,
+      completedTime: String,
+      completedStatus: Status
   )
 
   enum Status:
@@ -742,6 +742,101 @@ object Order:
       order == PreSubmitted || order == PendingCancel || order == Submitted || order == PendingSubmit
   end Status
 
+  final case class BasisPoints(value: Double, `type`:Int)
+  
+  final case class VolOrderParams(
+    volatility: Double = Double.MaxValue,
+    volatilityType: VolatilityType = VolatilityType.Ignored,
+    continuousUpdate: Int = 0,
+    referencePriceType: ReferencePriceType,
+    deltaNeutralOrderType: Order.Type = Order.Type.Ignored,
+    deltaNeutralAuxPrice: Double = Double.MaxValue,
+    deltaNeutralConId: Int = -1,
+    deltaNeutralOpenClose: String = "",
+    deltaNeutralShortSale: Boolean = false,
+    deltaNeutralShortSaleSlot: Int = 0,
+    deltaNeutralDesignatedLocation: String = ""
+  )
+
+  final case class TrailParams(stopPrice: Double, trailingPercent: Double)
+
+  final case class PegToBenchParams(
+    referenceContractId: Int = -1,
+    isPeggedChangeAmountDecrease: Boolean = false,
+    peggedChangeAmount: Double = 0.0,
+    referenceChangeAmount: Double = 0.0,
+    referenceExchangeId: String = "",
+  )
+  final case class ScaleOrderParams(  
+    scaleInitLevelSize: Int = Int.MaxValue,
+    scaleSubsLevelSize: Int = Int.MaxValue,
+    scalePriceIncrement: Double = Double.MaxValue,
+    scalePriceAdjustValue: Double = Double.MaxValue,
+    scalePriceAdjustInterval: Int = Int.MaxValue,
+    scaleProfitOffset: Double = Double.MaxValue,
+    scaleAutoReset: Boolean = false,
+    scaleInitPosition: Int = Int.MaxValue,
+    scaleInitFillQty: Int = Int.MaxValue,
+    scaleRandomPercent: Boolean = false,
+    scaleTable: String = "")
+
+  final case class FAParams(
+    faGroup: String = "",
+    faMethod: Method = Method.Ignored,
+    faPercentage: String = "",
+    faProfile: String = "",
+  ) 
+
+  final case class HedgeParams( `type`: String, value: String) 
+
+  final case class ClearingParams(account: String, intent: String)
+
+  final case class AlgoParams(strategy: AlgoStrategy, params: List[TagValue], id: String)
+
+  final case class AdjustedOrderParams(
+    adjustedOrderType: Order.Type = Order.Type.Ignored,
+    triggerPrice: Double = Double.MaxValue,
+    adjustedStopPrice: Double = Double.MaxValue,
+    adjustedStopLimitPrice: Double = Double.MaxValue,
+    adjustedTrailingAmount: Double = Double.MaxValue,
+    adjustableTrailingUnit: Int = 0,
+  )
+
+  final case class PegToStkOrVolOrderParams(
+    stockRangeLower: Double = Double.MaxValue,
+    stockRangeUpper: Double = Double.MaxValue,
+  )
+  final case class PegBestPegMidOrderAttributes(
+    minTradeQty: Int = Int.MaxValue,
+    minCompeteSize: Int = Int.MaxValue,
+    competeAgainstBestOffset: Double = Double.MaxValue,
+    midOffsetAtWhole: Double = Double.MaxValue,
+    midOffsetAtHalf: Double = Double.MaxValue,
+    allOrIgnored: Boolean = false
+  )
+
+  final case class BoxOrderParams(
+    startingPrice: Double = Double.MaxValue,
+    stockRefPrice: Double = Double.MaxValue,
+    delta: Double = Double.MaxValue,
+  )
+
+  final case class ConditionParams(
+    conditions: List[OrderCondition] = Nil,
+    conditionsCancelOrder: Boolean = false,
+    conditionsIgnoreRth: Boolean = false,
+  )
+
+  final case class ShortSaleParams(
+    shortSaleSlot: Int = 0,
+    // 1 if you hold the shares, 2 if they will be delivered from elsewhere.  Only for Action="SSHORT
+    designatedLocation: String = "",
+    exemptCode: Int = -1,
+  )
+
+  final case class WhatIfInfoAndCommission(
+
+  )
 end Order
 
 final case class TickAttrib(

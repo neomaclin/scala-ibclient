@@ -14,9 +14,6 @@ object Decoder {
   type ThrowableOr[A] = Either[Throwable, A]
   type DecoderState[T] = StateT[ThrowableOr, Array[String], T]
 
-  inline def decode[A: Decoder](entry: Array[String]): Either[Throwable, A] =
-    summon[Decoder[A]](entry)
-
   inline given Decoder[String] = (entry: Array[String]) => Right(entry.headOption.getOrElse(""))
 
   inline given Decoder[Long] =

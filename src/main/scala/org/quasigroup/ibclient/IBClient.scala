@@ -32,6 +32,11 @@ object IBClient:
 
   opaque type ServerVersion = Int
 
+  extension (version: ServerVersion)
+    def >= (otherVersion: ServerVersion): Boolean = version >= otherVersion
+
+    def < (otherVersion: ServerVersion): Boolean = version < otherVersion
+  
   object ServerVersion:
     def apply(value: Int): ServerVersion = value
 

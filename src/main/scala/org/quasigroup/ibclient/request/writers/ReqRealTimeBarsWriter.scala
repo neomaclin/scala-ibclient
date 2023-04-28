@@ -1,10 +1,12 @@
 package org.quasigroup.ibclient.request.writers
 
+import org.quasigroup.ibclient.IBClient
+
 import org.quasigroup.ibclient.encoder.Encoder.{EncoderState, write}
 import org.quasigroup.ibclient.request.RequestMsg.ReqRealTimeBars
 
 object ReqRealTimeBarsWriter {
-  def apply(a: ReqRealTimeBars): EncoderState =
+  def apply(a: ReqRealTimeBars)(using serverVersion: IBClient.ServerVersion): EncoderState =
     for {
       _ <- write(a.msgId)
       _ <- write(a.version)

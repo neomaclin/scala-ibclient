@@ -1,5 +1,7 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.decoder.Decoder.DecoderState
 import org.quasigroup.ibclient.types.{DepthMktDataDescription, SecType}
@@ -7,7 +9,7 @@ import org.quasigroup.ibclient.types.TypesCodec.given
 import org.quasigroup.ibclient.response.ResponseMsg.MktDepthExchanges
 
 object MktDepthExchangesReader {
-  val create: DecoderState[MktDepthExchanges] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[MktDepthExchanges] =
     for
       nDepthMktDataDescriptions <- read[Int]
       depthMktDataDescriptions <-

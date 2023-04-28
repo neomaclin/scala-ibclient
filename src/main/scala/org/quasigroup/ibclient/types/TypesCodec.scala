@@ -83,6 +83,12 @@ object TypesCodec:
   inline given Encoder[Order.Type] =
     summon[Encoder[String]].contramap(_.apiString)
 
+  inline given Decoder[Order.Type] =
+    summon[Decoder[String]].flatMap(str => Order.Type.values.find(_.apiString == str).toRight(new Exception("unknown order type")))
+  
+  inline given Decoder[Order.Status] =
+    summon[Decoder[String]].map(str => Order.Status.values.find(_.toString == str).getOrElse(Order.Status.Unknown))
+
   inline given Encoder[TickType] = summon[Encoder[Int]].contramap(_.index)
 
   inline given Decoder[TickType] =

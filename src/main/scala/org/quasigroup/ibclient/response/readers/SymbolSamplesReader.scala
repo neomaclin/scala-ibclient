@@ -1,12 +1,14 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.types.{Contract, ContractDescription, SecType}
 import org.quasigroup.ibclient.types.TypesCodec.given
 import org.quasigroup.ibclient.response.ResponseMsg.SymbolSamples
 
 object SymbolSamplesReader {
-  val create: DecoderState[SymbolSamples] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[SymbolSamples] =
     for
       reqId <- read[Int]
       nContractDescriptions <- read[Int]

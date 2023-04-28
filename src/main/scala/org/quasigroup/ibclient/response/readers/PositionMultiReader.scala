@@ -1,12 +1,14 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.PositionMulti
 import org.quasigroup.ibclient.types.{Contract, ContractRight, SecType, Decimal}
 import org.quasigroup.ibclient.types.TypesCodec.given
 
 object PositionMultiReader {
-  val create: DecoderState[PositionMulti] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[PositionMulti] =
     for
       reqId <- read[Int]
       account <- read[String]

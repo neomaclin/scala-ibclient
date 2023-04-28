@@ -1,10 +1,12 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.SecurityDefinitionOptionalParameter
 
 object SecurityDefinitionOptionalParameterReader {
-  val create: DecoderState[SecurityDefinitionOptionalParameter] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[SecurityDefinitionOptionalParameter] =
     for
       reqId <- read[Int]
       exchange <- read[String]

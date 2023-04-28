@@ -1,11 +1,13 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.MarketRule
 import org.quasigroup.ibclient.types.PriceIncrement
 
 object MarketRuleReader {
-  val create: DecoderState[MarketRule] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[MarketRule] =
     for
       marketRuleId <- read[Int]
       nPriceIncrements <- read[Int]

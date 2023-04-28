@@ -1,12 +1,14 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.ContractDetailsMsg
 import org.quasigroup.ibclient.types.*
 import org.quasigroup.ibclient.types.TypesCodec.given
 
 object ContractDataReader {
-  val create: DecoderState[ContractDetailsMsg] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[ContractDetailsMsg] =
     for
       version <- read[Int]
       reqId <- if version >= 3 then read[Int] else readNothing(-1)
@@ -26,7 +28,7 @@ object ContractDataReader {
       orderTypes <- read[String]
       validExchanges <- read[String]
       priceMagnifier <- if version >= 2 then read[Int] else readNothing(0)
-      underConId <- if version >= 4 then read[Int] else readNothing(0)
+      underConId <- if version >= 4 then read[Int] else readNothing(-1)
       longName <- if version >= 5 then read[String] else readNothing("")
       primaryExch <- if version >= 5 then read[String] else readNothing("")
       contractMonth <- if version >= 6 then read[String] else readNothing("")

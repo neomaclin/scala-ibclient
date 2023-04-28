@@ -1,10 +1,11 @@
 package org.quasigroup.ibclient.request.writers
 
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.encoder.Encoder.{EncoderState, write, given}
 import org.quasigroup.ibclient.types.Contract
 
 object ContractWriter {
-  def apply(contract: Contract): EncoderState =
+  def apply(contract: Contract)(using serverVersion: IBClient.ServerVersion): EncoderState =
     for
       _ <- write(contract.conId)
       _ <- write(contract.symbol)

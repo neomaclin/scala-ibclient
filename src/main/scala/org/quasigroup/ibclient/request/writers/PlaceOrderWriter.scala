@@ -1,23 +1,52 @@
 package org.quasigroup.ibclient.request.writers
 
+import org.quasigroup.ibclient.IBClient
+import org.quasigroup.ibclient.IBClient.*
 import org.quasigroup.ibclient.types.*
+import org.quasigroup.ibclient.types.Decimal.*
 import org.quasigroup.ibclient.types.TypesCodec.writeModifiedUTF
 import org.quasigroup.ibclient.types.TypesCodec.given
 import org.quasigroup.ibclient.encoder.Encoder.{*, given}
 import org.quasigroup.ibclient.request.RequestMsg.PlaceOrder
 
 object PlaceOrderWriter {
-  def apply(a: PlaceOrder): EncoderState =
+  def apply(a: PlaceOrder)(using serverVersion: IBClient.ServerVersion): EncoderState = {
+    val version = if serverVersion < MIN_SERVER_VER_NOT_HELD then 27 else 45
     for
       _ <- write(a.msgId)
+      _ <- if serverVersion < MIN_SERVER_VER_ORDER_CONTAINER then write(version) else writeNothing
       _ <- write(a.id)
       _ <- ContractWriter(a.contract)
-      _ <- write(a.contract.secIdType)
-      _ <- write(a.contract.secId)
+      _ <- 
+        if 
+          serverVersion >= MIN_SERVER_VER_SEC_ID_TYPE 
+        then 
+          write(a.contract.secIdType).flatMap(_ => write(a.contract.secId))
+        else 
+          writeNothing
       _ <- write(a.order.action)
-      _ <- write(a.order.totalQuantity)
+      _ <- 
+        if 
+          serverVersion >= MIN_SERVER_VER_FRACTIONAL_POSITIONS
+        then
+          write(a.order.totalQuantity.toString)
+        else
+          write(a.order.totalQuantity.value.longValue)
       _ <- write(a.order.orderType)
-      _ <- write(a.order.lmtPrice)
+      _ <- 
+        if 
+          serverVersion < MIN_SERVER_VER_ORDER_COMBO_LEGS_PRICE
+        then
+          write(if a.order.lmtPrice == Double.MaxValue then 0 else a.order.lmtPrice )
+        else
+          write(if a.order.lmtPrice == Double.MaxValue then "" else a.order.lmtPrice.toString)
+      _ <- 
+        if 
+          serverVersion < MIN_SERVER_VER_TRAILING_PERCENT
+        then
+          write(if a.order.auxPrice == Double.MaxValue then 0 else a.order.auxPrice )
+        else
+          write(if a.order.auxPrice == Double.MaxValue then "" else a.order.auxPrice.toString)        
       _ <- write(a.order.auxPrice)
       _ <- write(a.order.tif)
       _ <- write(a.order.ocaGroup)
@@ -84,9 +113,9 @@ object PlaceOrderWriter {
       _ <- write(false)
       _ <- write(Double.MaxValue)
       _ <- write(a.order.auctionStrategy)
-      _ <- write(a.order.startingPrice)
-      _ <- write(a.order.stockRefPrice)
-      _ <- write(a.order.delta)
+      // _ <- write(a.order.startingPrice)
+      // _ <- write(a.order.stockRefPrice)
+      // _ <- write(a.order.delta)
       _ <- write(
         if a.order.orderType == Order.Type.VOL then Double.MaxValue
         else a.order.stockRangeLower
@@ -117,8 +146,8 @@ object PlaceOrderWriter {
         else writeNothing
       _ <- write(a.order.continuousUpdate)
       _ <- write(a.order.referencePriceType)
-      _ <- write(a.order.trailStopPrice)
-      _ <- write(a.order.trailingPercent)
+      _ <- write(a.order.trailingParams.stopPrice)
+      _ <- write(a.order.trailingParams.trailingPercent)
       _ <- write(a.order.scaleInitLevelSize)
       _ <- write(a.order.scaleSubsLevelSize)
       _ <- write(a.order.scalePriceIncrement)
@@ -240,4 +269,5 @@ object PlaceOrderWriter {
         then write(a.order.midOffsetAtWhole).flatMap(_ => write(a.order.midOffsetAtHalf))
         else writeNothing
     yield ()
+      }
 }

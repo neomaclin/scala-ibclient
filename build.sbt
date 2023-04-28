@@ -23,6 +23,7 @@ lazy val root = (project in file(".")).settings(
     "co.fs2" %% "fs2-io" % FS2Version,
     "co.fs2" %% "fs2-scodec" % FS2Version,
     "org.typelevel" %% "shapeless3-deriving" % "3.3.0",
+    "org.typelevel" %% "shapeless3-typeable" % "3.3.0",
     "io.circe" %% "circe-core" % CirceVersion,
     "io.circe" %% "circe-generic" % CirceVersion,
     "io.circe" %% "circe-parser" % CirceVersion,

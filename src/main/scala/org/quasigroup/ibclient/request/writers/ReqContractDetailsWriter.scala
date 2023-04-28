@@ -1,12 +1,14 @@
 package org.quasigroup.ibclient.request.writers
 
+import org.quasigroup.ibclient.IBClient
+
 import org.quasigroup.ibclient.encoder.Encoder.{EncoderState, write}
 import org.quasigroup.ibclient.request.RequestMsg.ReqContractDetails
 
 import scala.collection.mutable
 
 object ReqContractDetailsWriter {
-  def apply(a: ReqContractDetails): EncoderState =
+  def apply(a: ReqContractDetails)(using serverVersion: IBClient.ServerVersion): EncoderState =
     for {
       _ <- write(a.msgId)
       _ <- write(a.version)

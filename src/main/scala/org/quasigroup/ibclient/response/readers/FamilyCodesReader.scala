@@ -1,11 +1,13 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.FamilyCodes
 import org.quasigroup.ibclient.types.FamilyCode
 
 object FamilyCodesReader {
-  val create: DecoderState[FamilyCodes] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[FamilyCodes] =
     for
       numberOfFamilyCode <- read[Int]
       familyCodes <-

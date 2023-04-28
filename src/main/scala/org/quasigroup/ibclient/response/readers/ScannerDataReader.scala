@@ -1,5 +1,7 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.ScannerData
 import org.quasigroup.ibclient.types.{Contract, ContractRight, SecType, ScannerDataElement}
@@ -7,7 +9,7 @@ import org.quasigroup.ibclient.types.TypesCodec.given
 import org.quasigroup.ibclient.types.ContractDetails
 
 object ScannerDataReader {
-  val create: DecoderState[ScannerData] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[ScannerData] =
     for
       version <- read[Int]
       tickerId <- read[Int]
@@ -19,7 +21,7 @@ object ScannerDataReader {
           for
             list <- state
             rank <- read[Int]
-            conid <- if (version >= 3) then read[Int] else readNothing(0)
+            conid <- if (version >= 3) then read[Int] else readNothing(-1)
             symbol <- read[String]
             secType <- read[SecType]
             lastTradeDateOrContractMonth <- read[String]

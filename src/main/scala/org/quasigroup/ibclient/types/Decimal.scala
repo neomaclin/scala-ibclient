@@ -11,6 +11,7 @@ extension (decimal: Decimal) {
   def isZero: Boolean =
     decimal == Decimal.ZERO || decimal.value.bigDecimal.signum() == 0
   def isValid: Boolean = decimal != Decimal.INVALID || decimal != Decimal.NaN
+  def toString: String = if isValid then decimal.value.bigDecimal.stripTrailingZeros.toPlainString else ""
 }
 
 object Decimal:

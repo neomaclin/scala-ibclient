@@ -1,5 +1,7 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.TickOptionComputation
 import org.quasigroup.ibclient.types.{TickAttrib, TickType}
@@ -7,7 +9,7 @@ import org.quasigroup.ibclient.types.TypesCodec.given
 import cats.syntax.eq.*
 
 object TickOptionComputationReader {
-  val create: DecoderState[TickOptionComputation] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[TickOptionComputation] =
     for
       version <- read[Int]
       tickerId <- read[Int]

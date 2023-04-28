@@ -1,12 +1,14 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.UpdatePortfolio
 import org.quasigroup.ibclient.types.{Contract, ContractRight, SecType, Decimal}
 import org.quasigroup.ibclient.types.TypesCodec.given
 
 object UpdatePortfolioReader {
-  val create: DecoderState[UpdatePortfolio] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[UpdatePortfolio] =
     for
       version <- read[Int]
       conId <- if version >= 6 then read[Int] else readNothing(0)
@@ -28,11 +30,11 @@ object UpdatePortfolioReader {
       marketPrice <- read[Double]
       marketValue <- read[Double]
       averageCost <-
-        if version >= 3 then read[Double] else readNothing(0.0)
+        if version >= 3 then read[Double] else readNothing(Double.MaxValue)
       unrealizedPNL <-
-        if version >= 3 then read[Double] else readNothing(0.0)
+        if version >= 3 then read[Double] else readNothing(Double.MaxValue)
       realizedPNL <-
-        if version >= 3 then read[Double] else readNothing(0.0)
+        if version >= 3 then read[Double] else readNothing(Double.MaxValue)
       accountName <-
         if version >= 4 then read[String] else readNothing("")
     yield

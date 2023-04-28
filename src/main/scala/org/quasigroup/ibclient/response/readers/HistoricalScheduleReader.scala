@@ -1,11 +1,13 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.HistoricalSchedule
 import org.quasigroup.ibclient.types.{HistoricalSession, Decimal}
 object HistoricalScheduleReader {
 
-  val create: DecoderState[HistoricalSchedule] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[HistoricalSchedule] =
     for
       reqId <- read[Int]
       startDateTime <- read[String]

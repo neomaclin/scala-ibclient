@@ -1,12 +1,14 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.PositionMsg
 import org.quasigroup.ibclient.types.{Contract, ContractRight, SecType, Decimal}
 import org.quasigroup.ibclient.types.TypesCodec.given
 
 object PositionMsgReader {
-  val create: DecoderState[PositionMsg] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[PositionMsg] =
     for
       version <- read[Int]
       account <- read[String]
@@ -23,7 +25,7 @@ object PositionMsgReader {
       tradingClass <-
         if version >= 2 then read[String] else readNothing("")
       pos <- read[Decimal]
-      avgCost <- if version >= 3 then read[Double] else readNothing(0.0)
+      avgCost <- if version >= 3 then read[Double] else readNothing(Double.MaxValue)
     yield PositionMsg(
       account,
       Contract(

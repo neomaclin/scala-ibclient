@@ -1,11 +1,13 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.HistoricalTicksLast
 import org.quasigroup.ibclient.types.{HistoricalTickLast, TickAttribLast, Decimal}
 
 object HistoricalTicksLastReader {
-  val create: DecoderState[HistoricalTicksLast] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[HistoricalTicksLast] =
     for
       reqId <- read[Int]
       tickCount <- read[Int]

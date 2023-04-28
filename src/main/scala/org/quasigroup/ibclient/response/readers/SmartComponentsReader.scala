@@ -1,10 +1,12 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.SmartComponents
 
 object SmartComponentsReader {
-  val create: DecoderState[SmartComponents] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[SmartComponents] =
     for
       reqId <- read[Int]
       size <- read[Int]

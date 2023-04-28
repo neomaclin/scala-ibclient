@@ -1,11 +1,11 @@
 package org.quasigroup.ibclient.request.writers
 
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.encoder.Encoder.{EncoderState, write, given}
-
 import org.quasigroup.ibclient.request.RequestMsg.CalculateOptionPrice
 
 object CalculateOptionPriceWriter {
-  def apply(a: CalculateOptionPrice): EncoderState =
+  def apply(a: CalculateOptionPrice)(using serverVersion: IBClient.ServerVersion): EncoderState =
     for
       _ <- write(a.msgId)
       _ <- write(a.version)

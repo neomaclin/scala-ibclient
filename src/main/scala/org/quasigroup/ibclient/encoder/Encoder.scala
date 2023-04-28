@@ -22,6 +22,9 @@ object Encoder:
   inline given Encoder[Int] =
     summon[Encoder[String]].contramap(int => if int == Int.MaxValue then "" else String.valueOf(int))
 
+  inline given Encoder[Long] =
+    summon[Encoder[String]].contramap(long => if long == Long.MaxValue then "" else String.valueOf(long))
+
   inline given Encoder[Array[Byte]] = _.toBuffer
 
   inline given Encoder[Boolean] =

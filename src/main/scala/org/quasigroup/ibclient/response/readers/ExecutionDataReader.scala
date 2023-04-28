@@ -1,17 +1,19 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.types.*
 import org.quasigroup.ibclient.types.TypesCodec.given
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.ExecDetails
 
 object ExecutionDataReader {
-  val create: DecoderState[ExecDetails] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[ExecDetails] =
     for
       version <- read[Int]
       reqId <- if version >= 7 then read[Int] else readNothing(-1)
       orderId <- read[Int]
-      conid <- if version >= 5 then read[Int] else readNothing(0)
+      conid <- if version >= 5 then read[Int] else readNothing(-1)
       symbol <- read[String]
       secType <- read[SecType]
       lastTradeDateOrContractMonth <- read[String]
@@ -30,8 +32,8 @@ object ExecutionDataReader {
       side <- read[String]
       shares <- read[Decimal]
       exePrice <- read[Double]
-      permId <- if version >= 2 then read[Int] else readNothing(0)
-      clientId <- if version >= 3 then read[Int] else readNothing(0)
+      permId <- if version >= 2 then read[Int] else readNothing(-1)
+      clientId <- if version >= 3 then read[Int] else readNothing(-1)
       liquidation <- if version >= 4 then read[Int] else readNothing(0)
       cumQty <- if version >= 6 then read[Decimal] else readNothing(Decimal.INVALID)
       avgPrice <- if version >= 6 then read[Double] else readNothing(Double.MaxValue)

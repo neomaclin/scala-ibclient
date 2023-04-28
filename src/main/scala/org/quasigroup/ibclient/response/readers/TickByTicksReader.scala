@@ -1,5 +1,7 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg
 import org.quasigroup.ibclient.response.ResponseMsg.{TickByTickAllLast, TickByTickBidAsk, TickByTickMidPoint, Skip}
@@ -7,7 +9,7 @@ import org.quasigroup.ibclient.types.{TickAttribBidAsk, TickAttribLast, Decimal}
 import org.quasigroup.ibclient.types.TypesCodec.given
 
 object TickByTicksReader {
-  val create: DecoderState[ResponseMsg] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[ResponseMsg] =
     for
       reqId <- read[Int]
       tickType <- read[Int]

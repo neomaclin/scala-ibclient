@@ -1,5 +1,7 @@
 package org.quasigroup.ibclient.request.writers
 
+import org.quasigroup.ibclient.IBClient
+
 import org.quasigroup.ibclient.types.*
 import org.quasigroup.ibclient.encoder.Encoder.{*, given}
 import org.quasigroup.ibclient.request.RequestMsg.ReqHistoricalData
@@ -7,7 +9,7 @@ import org.quasigroup.ibclient.request.RequestMsg.ReqHistoricalData
 import scala.collection.mutable
 
 object ReqHistoricalDataWriter {
-  def apply(a: ReqHistoricalData): EncoderState =
+  def apply(a: ReqHistoricalData)(using serverVersion: IBClient.ServerVersion): EncoderState =
     for
       _ <- write(a.msgId)
       _ <- write(a.version)

@@ -1,11 +1,13 @@
 package org.quasigroup.ibclient.response.readers
 
+
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.SoftDollarTiers
 import org.quasigroup.ibclient.types.SoftDollarTier
 
 object SoftDollarTiersReader {
-  val create: DecoderState[SoftDollarTiers] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[SoftDollarTiers] =
     for
       reqId <- read[Int]
       nTiers <- read[Int]

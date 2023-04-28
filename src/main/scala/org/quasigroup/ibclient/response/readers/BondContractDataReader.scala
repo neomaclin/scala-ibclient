@@ -1,12 +1,13 @@
 package org.quasigroup.ibclient.response.readers
 
+import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.decoder.Decoder.{DecoderState, read, readNothing}
 import org.quasigroup.ibclient.response.ResponseMsg.BondContractDetails
 import org.quasigroup.ibclient.types.*
 import org.quasigroup.ibclient.types.TypesCodec.given
 
 object BondContractDataReader {
-  val create: DecoderState[BondContractDetails] =
+  def create(using serverVersion: IBClient.ServerVersion): DecoderState[BondContractDetails] =
     for
       version <- read[Int]
       reqId <- if version >= 3 then read[Int] else readNothing(-1)
