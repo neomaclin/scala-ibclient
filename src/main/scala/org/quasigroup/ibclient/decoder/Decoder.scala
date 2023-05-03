@@ -42,10 +42,10 @@ object Decoder {
   import scala.compiletime.{erasedValue, summonInline}
   import scala.deriving.*
 
-  inline def summonAllEnum[T <: Tuple](idx: Int = 0): Map[Int, _] =
-    inline erasedValue[T] match
-      case _: EmptyTuple => Map.empty[Int, T]
-      case _: (t *: ts)  => summonAllEnum[ts](idx + 1) + (idx -> summonInline[t])
+  // inline def summonAllEnum[T <: Tuple](idx: Int = 0): Map[Int, _] =
+  //   inline erasedValue[T] match
+  //     case _: EmptyTuple => Map.empty[Int, T]
+  //     case _: (t *: ts)  => summonAllEnum[ts](idx + 1) + (idx -> summonInline[t])
 
   inline def summonAllDecoder[T <: Tuple]: List[Decoder[_]] =
     inline erasedValue[T] match
@@ -58,21 +58,33 @@ object Decoder {
   inline def read[T: Decoder]: DecoderState[T] =
     StateT(array => summon[Decoder[T]](array).map(array.tail -> _))
 
-  inline given decodeProduct[T](using mirror: Mirror.ProductOf[T]): Decoder[T] =
-    new Decoder[T] {
-      final def apply(entry: Array[String]): Either[Throwable, T] =
-        summonAllDecoder[mirror.MirroredElemTypes].iterator
-          .foldLeft(readNothing[Tuple](EmptyTuple)) { (state, e) =>
-            for
-              product <- state
-              item <- StateT[ThrowableOr, Array[String], Any](array =>
-                e.asInstanceOf[Decoder[Any]].apply(array).map(array.tail -> _)
-              )
-            yield product :* item
-          }
-          .runA(entry)
-          .map(mirror.fromProduct)
-    }
+  inline def readDoubleMax: DecoderState[Double] =
+    read[Double].map(value => if value == 0 then Double.MaxValue else value)
+
+  inline def readIntMax: DecoderState[Int] =
+    read[Int].map(value => if value == 0 then Int.MaxValue else value)
+
+  inline given derived[T](using m: Mirror.Of[T]): Decoder[T] =
+    lazy val encoders = summonAllDecoder[m.MirroredElemTypes]
+    inline m match
+      case s: Mirror.SumOf[T] => summonInline[Decoder[T]]
+      case p: Mirror.ProductOf[T] =>
+        new Decoder[T] {
+          final def apply(entry: Array[String]): Either[Throwable, T] =
+            encoders.iterator
+              .foldLeft(readNothing[Tuple](EmptyTuple)) { (state, e) =>
+                for
+                  product <- state
+                  item <- StateT[ThrowableOr, Array[String], Any](array =>
+                    e.asInstanceOf[Decoder[Any]].apply(array).map(array.tail -> _)
+                  )
+                yield product :* item
+              }
+              .runA(entry)
+              .map(p.fromProduct)
+        }
+
+  // inline given decodeProduct[T](using mirror: Mirror.ProductOf[T]): Decoder[T] =
 
 }
 

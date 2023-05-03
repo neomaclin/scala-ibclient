@@ -45,9 +45,9 @@ enum ResponseMsg:
 
   case OrderStatusMsg(
       orderId: Int,
-      status: String,
-      filled: Int,
-      remaining: Int,
+      status: Order.Status,
+      filled: Decimal,
+      remaining: Decimal,
       avgFillPrice: Double,
       permId: Int,
       parentId: Int,

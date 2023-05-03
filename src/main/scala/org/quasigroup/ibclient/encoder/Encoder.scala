@@ -75,8 +75,8 @@ object Encoder:
 
   val writeNothing: EncoderState = State(_ -> ())
 
-  inline def writeRaw(bytes: Array[Byte]): EncoderState =
-    State(buffer => (buffer ++ bytes) -> ())
+  // inline def writeRaw(bytes: Array[Byte]): EncoderState =
+  //   State(buffer => (buffer ++ bytes) -> ())
 
   inline def write[T: Encoder](value: T): EncoderState =
     State(buffer => (buffer ++ summon[Encoder[T]](value)) -> ())

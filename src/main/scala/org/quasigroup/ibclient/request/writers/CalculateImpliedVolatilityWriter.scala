@@ -7,7 +7,7 @@ import scala.collection.mutable
 import org.quasigroup.ibclient.IBClient
 
 object CalculateImpliedVolatilityWriter {
-  
+
   def apply(a: CalculateImpliedVolatility)(using serverVersion: IBClient.ServerVersion): EncoderState =
     for
       _ <- write(a.msgId)

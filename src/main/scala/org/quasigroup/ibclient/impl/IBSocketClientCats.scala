@@ -2,6 +2,8 @@ package org.quasigroup.ibclient.impl
 
 import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.IBClient.*
+import org.quasigroup.ibclient.types.*
+import org.quasigroup.ibclient.types.TypesCodec.given
 import org.quasigroup.ibclient.encoder.Encoder
 import org.quasigroup.ibclient.encoder.Encoder.{*, given}
 import org.quasigroup.ibclient.decoder.Decoder
@@ -28,6 +30,7 @@ import scodec.codecs.*
 import scala.concurrent.duration.DurationInt
 import scala.reflect.ClassTag
 import org.quasigroup.ibclient.response.MsgDecoders
+import cats.instances.seq
 
 class IBSocketClientCats[F[_]: Async: Console](
     socket: Socket[F],

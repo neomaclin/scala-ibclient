@@ -1,6 +1,5 @@
 package org.quasigroup.ibclient.response.readers
 
-
 import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.types.*
 import org.quasigroup.ibclient.types.TypesCodec.given
