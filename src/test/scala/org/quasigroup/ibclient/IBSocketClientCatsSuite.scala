@@ -27,7 +27,7 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers:
     for {
       familycodes <- ibclient.reqFamilyCodes
     } yield {
-      expect(familycodes.familyCodes.isEmpty)
+      expect(familycodes.familyCodes.length == 1)
     }
   }
 

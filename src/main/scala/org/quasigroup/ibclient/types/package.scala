@@ -748,8 +748,7 @@ object Order:
   final case class FAParams(
       faGroup: String = "",
       faMethod: Method = Method.None,
-      faPercentage: String = "",
-      faProfile: String = ""
+      faPercentage: String = ""
   )
 
   final case class HedgeParams(`type`: HedgeType = HedgeType.None, value: String = "")

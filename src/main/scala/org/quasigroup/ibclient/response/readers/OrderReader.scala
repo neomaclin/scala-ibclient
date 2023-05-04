@@ -279,8 +279,17 @@ object OrderReader {
   private def readBasisPoints(version: Int): DecoderState[Option[Order.BasisPoints]] =
     if version >= 14 then read[Order.BasisPoints].map(_.some) else readNothing(None)
 
-  private def readFAParams(version: Int): DecoderState[Option[Order.FAParams]] =
-    if version >= 7 then read[Order.FAParams].map(_.some) else readNothing(None)
+  private def readFAParams(
+      version: Int
+  )(using serverVersion: IBClient.ServerVersion): DecoderState[Option[Order.FAParams]] =
+    if version >= 7 then
+      for
+        faGroup <- read[String]
+        faMethod <- read[Method]
+        faPercentage <- read[String]
+        faProfile <- if serverVersion < MIN_SERVER_VER_FA_PROFILE_DESUPPORT then read[String] else readNothing("")
+      yield Some(Order.FAParams(faGroup, faMethod, faPercentage))
+    else readNothing(None)
 
   private def readVolOrderParams(
       version: Int,

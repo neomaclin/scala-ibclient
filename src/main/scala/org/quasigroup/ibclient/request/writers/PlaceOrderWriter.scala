@@ -133,7 +133,7 @@ object PlaceOrderWriter {
       _ <- write(a.order.faFields.map(_.faGroup).getOrElse(""))
       _ <- write(a.order.faFields.map(_.faMethod).getOrElse(Method.None))
       _ <- write(a.order.faFields.map(_.faPercentage).getOrElse(""))
-      _ <- write(a.order.faFields.map(_.faProfile).getOrElse(""))
+      _ <- if serverVersion < MIN_SERVER_VER_FA_PROFILE_DESUPPORT then write("") else writeNothing
       _ <- write(a.order.modelCode)
       _ <- write(a.order.shortSaleFields.map(_.shortSaleSlot).getOrElse(0))
       _ <- write(a.order.shortSaleFields.map(_.designatedLocation).getOrElse(""))

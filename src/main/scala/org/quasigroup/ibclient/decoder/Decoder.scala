@@ -42,10 +42,6 @@ object Decoder {
   import scala.compiletime.{erasedValue, summonInline}
   import scala.deriving.*
 
-  // inline def summonAllEnum[T <: Tuple](idx: Int = 0): Map[Int, _] =
-  //   inline erasedValue[T] match
-  //     case _: EmptyTuple => Map.empty[Int, T]
-  //     case _: (t *: ts)  => summonAllEnum[ts](idx + 1) + (idx -> summonInline[t])
 
   inline def summonAllDecoder[T <: Tuple]: List[Decoder[_]] =
     inline erasedValue[T] match
@@ -56,7 +52,7 @@ object Decoder {
     StateT(array => Right(array -> default))
 
   inline def read[T: Decoder]: DecoderState[T] =
-    StateT(array => summon[Decoder[T]](array).map(array.tail -> _))
+    StateT(array => summon[Decoder[T]](array).map((if array.isEmpty then array else array.tail) -> _))
 
   inline def readDoubleMax: DecoderState[Double] =
     read[Double].map(value => if value == 0 then Double.MaxValue else value)
@@ -83,8 +79,6 @@ object Decoder {
               .runA(entry)
               .map(p.fromProduct)
         }
-
-  // inline given decodeProduct[T](using mirror: Mirror.ProductOf[T]): Decoder[T] =
 
 }
 

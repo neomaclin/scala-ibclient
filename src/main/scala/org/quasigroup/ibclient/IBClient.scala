@@ -4,6 +4,7 @@ import org.quasigroup.ibclient.response.ResponseMsg
 import org.quasigroup.ibclient.response.ResponseMsg.*
 
 import fs2.Stream
+
 trait IBClient[F[_]]:
 
   def reqCurrentTime: F[CurrentTime]
@@ -158,9 +159,11 @@ object IBClient:
   val MIN_SERVER_VER_INSTRUMENT_TIMEZONE: ServerVersion = 174
   val MIN_SERVER_VER_HMDS_MARKET_DATA_IN_SHARES: ServerVersion = 175
   val MIN_SERVER_VER_BOND_ISSUERID: ServerVersion = 176
+  val MIN_SERVER_VER_FA_PROFILE_DESUPPORT: ServerVersion = 177
+   
   val MIN_VERSION: ServerVersion = 100
   // envelope encoding, applicable to useV100Plus mode only
-  val MAX_VERSION: ServerVersion = MIN_SERVER_VER_BOND_ISSUERID // ditto
+  val MAX_VERSION: ServerVersion = MIN_SERVER_VER_FA_PROFILE_DESUPPORT // ditto
 
   def buildVersionString(
       minVersion: ServerVersion,
@@ -168,5 +171,3 @@ object IBClient:
   ): String =
     "v" + (if minVersion < maxVersion then minVersion + ".." + maxVersion
            else minVersion)
-
-end IBClient

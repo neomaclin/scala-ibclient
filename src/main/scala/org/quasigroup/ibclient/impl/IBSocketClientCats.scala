@@ -36,7 +36,7 @@ class IBSocketClientCats[F[_]: Async: Console](
     socket: Socket[F],
     optionalCapabilities: Option[String]
 ) extends IBClient[F]:
-
+  private final val MAX_MSG_LENGTH: Int = 0xffffff
   import IBSocketClientCats.{*, given}
 
   private val requestRateLimiterRef: Ref[F, Int] = Ref.unsafe(50)
@@ -167,6 +167,7 @@ class IBSocketClientCats[F[_]: Async: Console](
       resp <- summon[Decoder[ConnectionAck]](result).liftTo[F]
       _ <- _clientId.complete(clientId)
       _ <- _serverVersion.complete(resp.serverVersion)
+      _ <- Console[F].println("Current server version:" + resp.serverVersion)
       _ <- startAPI
     yield resp
 
@@ -222,7 +223,6 @@ class IBSocketClientCats[F[_]: Async: Console](
       RequestFA(faDataType = faDataType)
     )
 
-end IBSocketClientCats
 
 object IBSocketClientCats:
   final case class ConnectionAck(
@@ -233,7 +233,7 @@ object IBSocketClientCats:
   inline given Decoder[IBClient.ServerVersion] =
     summon[Decoder[Int]].map(IBClient.ServerVersion.apply)
 
-  val MAX_MSG_LENGTH: Int = 0xffffff
+
   def make[F[_]: Async: Console](
       host: Host = host"127.0.0.1",
       port: Port = port"7496",
@@ -248,4 +248,3 @@ object IBSocketClientCats:
       _ <- Resource.onFinalize(client.eDisconnect)
     yield client
 
-end IBSocketClientCats
