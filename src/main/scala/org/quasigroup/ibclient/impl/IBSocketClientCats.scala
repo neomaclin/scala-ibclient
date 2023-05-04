@@ -223,7 +223,6 @@ class IBSocketClientCats[F[_]: Async: Console](
       RequestFA(faDataType = faDataType)
     )
 
-
 object IBSocketClientCats:
   final case class ConnectionAck(
       serverVersion: IBClient.ServerVersion,
@@ -232,7 +231,6 @@ object IBSocketClientCats:
 
   inline given Decoder[IBClient.ServerVersion] =
     summon[Decoder[Int]].map(IBClient.ServerVersion.apply)
-
 
   def make[F[_]: Async: Console](
       host: Host = host"127.0.0.1",
@@ -247,4 +245,3 @@ object IBSocketClientCats:
         .evalTap(_.eConnect(clientId))
       _ <- Resource.onFinalize(client.eDisconnect)
     yield client
-

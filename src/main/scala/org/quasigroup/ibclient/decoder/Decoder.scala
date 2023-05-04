@@ -42,7 +42,6 @@ object Decoder {
   import scala.compiletime.{erasedValue, summonInline}
   import scala.deriving.*
 
-
   inline def summonAllDecoder[T <: Tuple]: List[Decoder[_]] =
     inline erasedValue[T] match
       case _: EmptyTuple => Nil
