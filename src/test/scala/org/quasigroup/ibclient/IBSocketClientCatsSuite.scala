@@ -46,7 +46,7 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers:
       _ <- ibclient.cancelPositions
     } yield {
 
-      expect(positions.size >= 1)
+      expect(positions.nonEmpty)
     }
   }
 

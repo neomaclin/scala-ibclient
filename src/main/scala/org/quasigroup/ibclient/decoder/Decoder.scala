@@ -8,6 +8,8 @@ import scala.reflect.ClassTag
 import scala.compiletime.{summonFrom, erasedValue, summonInline}
 import scala.deriving.Mirror
 import scala.util.{Either, Try}
+import io.circe.Json
+import io.circe.parser._
 
 object Decoder {
 
@@ -15,6 +17,9 @@ object Decoder {
   type DecoderState[T] = StateT[ThrowableOr, Array[String], T]
 
   inline given Decoder[String] = (entry: Array[String]) => Right(entry.headOption.getOrElse(""))
+
+  inline given Decoder[Json] =
+    summon[Decoder[String]].flatMap(value => if value.isEmpty then Right(Json.Null) else parse(value))
 
   inline given Decoder[Long] =
     summon[Decoder[String]].flatMap(value => if value.isEmpty then Right(0) else Try(value.toLong).toEither)

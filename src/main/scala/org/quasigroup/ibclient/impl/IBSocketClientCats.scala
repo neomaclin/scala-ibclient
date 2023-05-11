@@ -31,6 +31,7 @@ import scala.concurrent.duration.DurationInt
 import scala.reflect.ClassTag
 import org.quasigroup.ibclient.response.MsgDecoders
 import cats.instances.seq
+import java.time.ZoneId
 
 class IBSocketClientCats[F[_]: Async: Console](
     socket: Socket[F],
@@ -39,6 +40,7 @@ class IBSocketClientCats[F[_]: Async: Console](
   private final val MAX_MSG_LENGTH: Int = 0xffffff
   import IBSocketClientCats.{*, given}
 
+ 
   private val requestRateLimiterRef: Ref[F, Int] = Ref.unsafe(50)
   private val msgPushingFiberDeferred =
     Deferred.unsafe[F, Fiber[F, Throwable, Unit]]
@@ -47,6 +49,7 @@ class IBSocketClientCats[F[_]: Async: Console](
     Deferred.unsafe[F, Fiber[F, Throwable, Unit]]
   private val _clientId = Deferred.unsafe[F, Int]
   private val _serverVersion = Deferred.unsafe[F, IBClient.ServerVersion]
+  private val _serverTimeZone:Ref[F, ZoneId] = Ref.unsafe(ZoneId.systemDefault())
 
   private def startMsgConsumption: F[Unit] =
     for
@@ -168,6 +171,7 @@ class IBSocketClientCats[F[_]: Async: Console](
       _ <- _clientId.complete(clientId)
       _ <- _serverVersion.complete(resp.serverVersion)
       _ <- Console[F].println("Current server version:" + resp.serverVersion)
+      _ <- Console[F].println("Current server timezone:" + resp.time)
       _ <- startAPI
     yield resp
 

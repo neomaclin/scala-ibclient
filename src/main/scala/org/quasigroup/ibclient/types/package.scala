@@ -17,20 +17,20 @@ final case class BitMask(mask: Int) {
 final case class TagValue(tag: String, value: String)
 
 final case class ComboLeg(
-    conId: Int,
-    ratio: Int,
+    conId: Int = 0,
+    ratio: Int = 0,
     action: Action,
-    exchange: String,
-    openClose: ComboLeg.OpenClose,
-    shortSaleSlot: Int,
-    designatedLocation: String,
-    exemptCode: Int
+    exchange: String = "",
+    openClose: ComboLeg.OpenClose = ComboLeg.OpenClose.Same,
+    shortSaleSlot: Int = 0, // 1 = clearing broker, 2 = third party
+    designatedLocation: String = "",
+    exemptCode: Int = -1
 )
 
 final case class Contract(
     conId: Int = -1,
-    symbol: String,
-    secType: SecType,
+    symbol: String = "",
+    secType: SecType = SecType.None,
     lastTradeDateOrContractMonth: String = "",
     strike: Double = 0,
     right: ContractRight = ContractRight.None,
@@ -283,11 +283,11 @@ enum FADataType:
   case UNUSED, GROUPS, PROFILES, ALIASES
 
 enum SecIdType:
-  case None, CUSIP, SEDOL, ISIN, RIC
+  case None, CUSIP, SEDOL, ISIN, RIC, FIGI
 
 enum SecType:
-  case None, STK, OPT, FUT, CASH, BOND, CFD, FOP, WAR, IOPT, FWD, BAG, IND,
-    BILL, FUND, FIXED, SLB, NEWS, CMDTY, BSK, ICU, ICS, CRYPTO
+  case None, STK, OPT, FUT, CONTFUT, CASH, BOND, CFD, FOP, WAR, IOPT, FWD, BAG, IND, BILL, FUND, FIXED, SLB, NEWS,
+    CMDTY, BSK, ICU, ICS, CRYPTO, FUT_CONTFUT
 
 enum MktDataType:
   case Unknown, Realtime, Frozen, Delayed, DelayedFrozen
@@ -458,10 +458,91 @@ opaque type FutContract = Contract
 opaque type OptContract = Contract
 opaque type StkContract = Contract
 
+enum LocationCode(val code: String):
+  case BOND_US extends LocationCode("BOND.US")
+  case EFP extends LocationCode("EFP")
+  case FUT_EU_BELFOX extends LocationCode("FUT.EU.BELFOX")
+  case FUT_EU_FTA extends LocationCode("FUT.EU.FTA")
+  case FUT_EU_IDEM extends LocationCode("FUT.EU.IDEM")
+  case FUT_EU_LIFFE extends LocationCode("FUT.EU.LIFFE")
+  case FUT_EU_MEFFRV extends LocationCode("FUT.EU.MEFFRV")
+  case FUT_EU_MONEP extends LocationCode("FUT.EU.MONEP")
+  case FUT_EU extends LocationCode("FUT.EU")
+  case FUT_HK_HKFE extends LocationCode("FUT.HK.HKFE")
+  case FUT_HK_JAPAN extends LocationCode("FUT.HK.JAPAN")
+  case FUT_HK_KSE extends LocationCode("FUT.HK.KSE")
+  case FUT_HK_NSE extends LocationCode("FUT.HK.NSE")
+  case FUT_HK_OSE_JPN extends LocationCode("FUT.HK.OSE.JPN")
+  case FUT_HK_SGX extends LocationCode("FUT.HK.SGX")
+  case FUT_HK_SNFE extends LocationCode("FUT.HK.SNFE")
+  case FUT_HK_TSE_JPN extends LocationCode("FUT.HK.TSE.JPN")
+  case FUT_HK extends LocationCode("FUT.HK")
+  case FUT_IPE extends LocationCode("FUT.IPE")
+  case FUT_NA_CDE extends LocationCode("FUT.NA.CDE")
+  case FUT_NA extends LocationCode("FUT.NA")
+  case FUT_NYBOT extends LocationCode("FUT.NYBOT")
+  case FUT_NYSELIFFE extends LocationCode("FUT.NYSELIFFE")
+  case FUT_US extends LocationCode("FUT.US")
+  case IND_EU_BELFOX extends LocationCode("IND.EU.BELFOX")
+  case IND_EU_FTA extends LocationCode("IND.EU.FTA")
+  case IND_EU_LIFFE extends LocationCode("IND.EU.LIFFE")
+  case IND_EU_MONEP extends LocationCode("IND.EU.MONEP")
+  case IND_EU extends LocationCode("IND.EU")
+  case IND_HK_HKFE extends LocationCode("IND.HK.HKFE")
+  case IND_HK_JAPAN extends LocationCode("IND.HK.JAPAN")
+  case IND_HK_KSE extends LocationCode("IND.HK.KSE")
+  case IND_HK_NSE extends LocationCode("IND.HK.NSE")
+  case IND_HK_OSE_JPN extends LocationCode("IND.HK.OSE.JPN")
+  case IND_HK_SGX extends LocationCode("IND.HK.SGX")
+  case IND_HK_SNFE extends LocationCode("IND.HK.SNFE")
+  case IND_HK_TSE_JPN extends LocationCode("IND.HK.TSE.JPN")
+  case IND_HK extends LocationCode("IND.HK")
+  case IND_US extends LocationCode("IND.US")
+  case SLB_AQS extends LocationCode("SLB.AQS")
+  case STK_AMEX extends LocationCode("STK.AMEX")
+  case STK_ARCA extends LocationCode("STK.ARCA")
+  case STK_EU_AEB extends LocationCode("STK.EU.AEB")
+  case STK_EU_BM extends LocationCode("STK.EU.BM")
+  case STK_EU_BVME extends LocationCode("STK.EU.BVME")
+  case STK_EU_EBS extends LocationCode("STK.EU.EBS")
+  case STK_EU_IBIS extends LocationCode("STK.EU.IBIS")
+  case STK_EU_IBIS_ETF extends LocationCode("STK.EU.IBIS-ETF")
+  case STK_EU_IBIS_EUSTARS extends LocationCode("STK.EU.IBIS-EUSTARS")
+  case STK_EU_IBIS_NEWX extends LocationCode("STK.EU.IBIS-NEWX")
+  case STK_EU_IBIS_USSTARS extends LocationCode("STK.EU.IBIS-USSTARS")
+  case STK_EU_IBIS_XETRA extends LocationCode("STK.EU.IBIS-XETRA")
+  case STK_EU_LSE extends LocationCode("STK.EU.LSE")
+  case STK_EU_SBF extends LocationCode("STK.EU.SBF")
+  case STK_EU_SBVM extends LocationCode("STK.EU.SBVM")
+  case STK_EU_SFB extends LocationCode("STK.EU.SFB")
+  case STK_EU_SWISS extends LocationCode("STK.EU.SWISS")
+  case STK_EU_VIRTX extends LocationCode("STK.EU.VIRTX")
+  case STK_EU extends LocationCode("STK.EU")
+  case STK_HK_ASX extends LocationCode("STK.HK.ASX")
+  case STK_HK_NSE extends LocationCode("STK.HK.NSE")
+  case STK_HK_SEHK extends LocationCode("STK.HK.SEHK")
+  case STK_HK_SGX extends LocationCode("STK.HK.SGX")
+  case STK_HK_TSE_JPN extends LocationCode("STK.HK.TSE.JPN")
+  case STK_HK extends LocationCode("STK.HK")
+  case STK_NA_CANADA extends LocationCode("STK.NA.CANADA")
+  case STK_NA_TSE extends LocationCode("STK.NA.TSE")
+  case STK_NA_VENTURE extends LocationCode("STK.NA.VENTURE")
+  case STK_NA extends LocationCode("STK.NA")
+  case STK_NASDAQ_NMS extends LocationCode("STK.NASDAQ.NMS")
+  case STK_NASDAQ_SCM extends LocationCode("STK.NASDAQ.SCM")
+  case STK_NASDAQ extends LocationCode("STK.NASDAQ")
+  case STK_NYSE extends LocationCode("STK.NYSE")
+  case STK_OTCBB extends LocationCode("STK.OTCBB")
+  case STK_PINK extends LocationCode("STK.PINK")
+  case STK_US_MAJOR extends LocationCode("STK.US.MAJOR")
+  case STK_US_MINOR extends LocationCode("STK.US.MINOR")
+  case STK_US extends LocationCode("STK.US")
+  case WAR_EU_ALL extends LocationCode("WAR.EU.ALL")
+
 final case class ScannerSubscription(
     numberOfRows: Int,
     instrument: String,
-    locationCode: String,
+    locationCode: LocationCode,
     scanCode: ScanCode,
     abovePrice: Double,
     belowPrice: Double,
@@ -508,10 +589,9 @@ final case class Order(
     outsideRth: Boolean = false,
     sweepToFill: Boolean = false,
     percentOffset: Double = Double.MaxValue,
-    trailingParams: Order.TrailParams,
     minQty: Int = Int.MaxValue,
-    goodAfterTime: String, // FORMAT: 20060505 08:00:00 EST
-    goodTillDate: String, // FORMAT: 20060505 08:00:00 EST or 20060505
+    goodAfterTime: String = "", // FORMAT: 20060505 08:00:00 EST
+    goodTillDate: String = "", // FORMAT: 20060505 08:00:00 EST or 20060505
     ocaGroup: String = "",
     orderRef: String = "",
     rule80A: Rule80A = Rule80A.None,
@@ -525,12 +605,12 @@ final case class Order(
     faFields: Option[Order.FAParams] = None,
     // volatility orders
     volOrderFields: Option[Order.VolOrderParams] = None,
-    scaleFields: Order.ScaleOrderParams,
+    scaleFields: Order.ScaleOrderParams = Order.ScaleOrderParams(),
 
     // hedge orders
-    hedgeFields: Option[Order.HedgeParams],
+    hedgeFields: Option[Order.HedgeParams] = None,
     // algo orders
-    algoFields: Option[Order.AlgoParams],
+    algoFields: Option[Order.AlgoParams] = None,
     // // combo orders
     smartComboRoutingFields: List[TagValue] = Nil,
     orderComboLegs: List[Order.ComboLeg] = Nil,
@@ -548,9 +628,9 @@ final case class Order(
     // BOX or VOL ORDERS ONLY
     auctionStrategy: AuctionStrategy = AuctionStrategy.None,
     // BOX ORDERS ONLY
-    boxOrderFields: Option[Order.BoxOrderParams],
+    boxOrderFields: Option[Order.BoxOrderParams] = None,
     // pegged to stock or VOL orders
-    pegToStkOrVolOrderFields: Option[Order.PegToStkOrVolOrderParams],
+    pegToStkOrVolOrderFields: Option[Order.PegToStkOrVolOrderParams] = None,
     // COMBO ORDERS ONLY
     basisPoints: Option[Order.BasisPoints] = None,
     // Not Held
@@ -566,6 +646,7 @@ final case class Order(
     adjustedOrderType: Order.Type = Order.Type.None,
     triggerPrice: Double = Double.MaxValue,
     trailStopPrice: Double = Double.MaxValue,
+    trailingPercent: Double = Double.MaxValue,
     lmtPriceOffset: Double = Double.MaxValue,
     adjustedStopPrice: Double = Double.MaxValue,
     adjustedStopLimitPrice: Double = Double.MaxValue,
@@ -630,7 +711,7 @@ object Order:
     case MKT extends Type("MKT")
     case LMT extends Type("LMT")
     case STP extends Type("STP")
-    case STLMT extends Type("STP LMT")
+    case STP_LMT extends Type("STP LMT")
     case REL extends Type("REL")
     case TRAIL extends Type("TRAIL")
     case BOX_TOP extends Type("BOX TOP")
@@ -651,7 +732,7 @@ object Order:
     case PEG_STK extends Type("PEG STK")
     case REL_PLUS_LMT extends Type("REL + LMT")
     case REL_PLUS_MKT extends Type("REL + MKT")
-    case STPRT extends Type("STP PRT")
+    case STP_PRT extends Type("STP PRT")
     case TRAIL_LIMIT extends Type("TRAIL LIMIT")
     case TRAIL_LIT extends Type("TRAIL LIT")
     case TRAIL_LMT_PLUS_MKT extends Type("TRAIL LMT + MKT")
@@ -710,7 +791,7 @@ object Order:
       volatility: Double = Double.MaxValue,
       volatilityType: VolatilityType = VolatilityType.None,
       continuousUpdate: Int = 0,
-      referencePriceType: ReferencePriceType,
+      referencePriceType: ReferencePriceType = ReferencePriceType.None,
       deltaNeutralOrderType: Order.Type = Order.Type.None,
       deltaNeutralAuxPrice: Double = Double.MaxValue,
       deltaNeutralConId: Int = -1,
@@ -722,8 +803,6 @@ object Order:
       deltaNeutralShortSaleSlot: Int = 0,
       deltaNeutralDesignatedLocation: String = ""
   )
-
-  final case class TrailParams(stopPrice: Double = Double.MaxValue, trailingPercent: Double = Double.MaxValue)
 
   final case class PegToBenchParams(
       referenceContractId: Int = -1,
@@ -1083,10 +1162,12 @@ enum AccountSummaryTag:
     Leverage // GrossPositionValue / NetLiquidation
 end AccountSummaryTag
 
+final case class Account(acct: String, amount: String)
 final case class Group(
     name: String,
     defaultMethod: Method,
-    account: List[String]
+    accounts: List[Account],
+    riskCriteria: String
 )
 final case class Position(
     contract: Contract,
@@ -1146,7 +1227,7 @@ final case class PriceCondition(
     price: Double,
     conId: Int,
     exchange: String,
-    triggerMethod: TriggerMethod
+    triggerMethod: TriggerMethod = TriggerMethod.Default
 ) extends ContractCondition {
   final val conditionType = OrderConditionType.Price
 }

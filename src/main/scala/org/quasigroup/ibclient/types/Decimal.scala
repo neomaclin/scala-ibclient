@@ -20,6 +20,7 @@ object Decimal:
   val MATH_CONTEXT: MathContext = MathContext.DECIMAL64
   val ZERO: Decimal = BigDecimal.valueOf(0)
   val ONE: Decimal = BigDecimal.valueOf(1)
+  val ONE_HUNDRED: Decimal = BigDecimal.valueOf(100)
   val NaN: Decimal = BigDecimal.valueOf(Long.MinValue)
 
   private val NAN_STRING: String =

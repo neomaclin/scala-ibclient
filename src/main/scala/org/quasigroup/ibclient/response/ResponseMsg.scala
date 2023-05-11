@@ -2,6 +2,8 @@ package org.quasigroup.ibclient.response
 
 import org.quasigroup.ibclient.types.*
 
+import io.circe.Json
+
 enum ResponseMsg:
   case TickPrice(
       tickerId: Int,
@@ -360,9 +362,9 @@ enum ResponseMsg:
 
   case ReplaceFAEnd(reqId: Int, text: String) extends ResponseMsg
 
-  case WshMetaDataMsg(reqId: Int, dataJson: String) extends ResponseMsg
+  case WshMetaDataMsg(reqId: Int, data: Json) extends ResponseMsg
 
-  case WshEventDataMsg(reqId: Int, dataJson: String) extends ResponseMsg
+  case WshEventDataMsg(reqId: Int, data: Json) extends ResponseMsg
 
   case HistoricalSchedule(
       reqId: Int,

@@ -131,10 +131,10 @@ object TypesCodec:
     summon[Decoder[Int]].map(TickType.fromOrdinal)
 
   inline given Decoder[SecType] =
-    summon[Decoder[String]].map(SecType.valueOf)
+    summon[Decoder[String]].map(str => SecType.valueOf(str.replace('+', '_')))
 
   inline given Encoder[SecType] =
-    summon[Encoder[String]].contramap(_.toString)
+    summon[Encoder[String]].contramap(_.toString.replace('_', '+'))
 
   inline given Decoder[SecIdType] =
     summon[Decoder[String]].map(SecIdType.valueOf)
@@ -180,3 +180,8 @@ object TypesCodec:
 
   inline given Decoder[ComboLeg.OpenClose] =
     summon[Decoder[Int]].map(ComboLeg.OpenClose.fromOrdinal)
+
+  inline given Encoder[LocationCode] =
+    summon[Encoder[String]].contramap(_.code)
+
+  inline given Decoder[LocationCode] = summon[Decoder[String]].map(LocationCode.valueOf)

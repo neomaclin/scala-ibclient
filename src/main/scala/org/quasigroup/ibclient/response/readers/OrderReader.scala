@@ -270,12 +270,6 @@ object OrderReader {
       yield entries
     else readNothing(Nil)
 
-  private def readTrailParams(version: Int): DecoderState[Order.TrailParams] =
-    for
-      stopPrice <- if version >= 13 then readDoubleMax else readNothing(Double.MaxValue)
-      trailingPercent <- if version >= 30 then readDoubleMax else readNothing(Double.MaxValue)
-    yield Order.TrailParams(stopPrice = stopPrice, trailingPercent = trailingPercent)
-
   private def readBasisPoints(version: Int): DecoderState[Option[Order.BasisPoints]] =
     if version >= 14 then read[Order.BasisPoints].map(_.some) else readNothing(None)
 
@@ -415,7 +409,8 @@ object OrderReader {
       parentId <- if version >= 10 then read[Int] else readNothing(-1)
       triggerMethod <- if version >= 10 then read[TriggerMethod] else readNothing(TriggerMethod.Default)
       volOrderFields <- readVolOrderParams(version, true)
-      trailParams <- readTrailParams(version)
+      _ <- if version >= 13 then readDoubleMax else readNothing(Double.MaxValue)
+      trailingPercent <- if version >= 30 then readDoubleMax else readNothing(Double.MaxValue)
       basisPoints <- readBasisPoints(version)
       comboLegFields <- readComboLegs(version)
       smartComboRoutingFields <- readSmartComboRoutingParams(version)
@@ -496,7 +491,6 @@ object OrderReader {
           parentId = parentId,
           triggerMethod = triggerMethod,
           volOrderFields = volOrderFields,
-          trailingParams = trailParams,
           basisPoints = basisPoints,
           orderComboLegs = comboLegFields.orderComboLegs,
           smartComboRoutingFields = smartComboRoutingFields,
@@ -516,6 +510,7 @@ object OrderReader {
           adjustedOrderType = adjustedOrderType,
           triggerPrice = triggerPrice,
           trailStopPrice = trailStopPrice,
+          trailingPercent = trailingPercent,
           lmtPriceOffset = lmtPriceOffset,
           adjustedStopPrice = adjustedStopPrice,
           adjustedStopLimitPrice = adjustedStopLimitPrice,
@@ -587,7 +582,9 @@ object OrderReader {
       ocaType <- if version >= 9 then read[OcaType] else readNothing(OcaType.None)
       triggerMethod <- if version >= 10 then read[TriggerMethod] else readNothing(TriggerMethod.Default)
       volOrderFields <- readVolOrderParams(version, false)
-      trailParams <- readTrailParams(version)
+      // trailParams <- readTrailParams(version)
+      _ <- if version >= 13 then readDoubleMax else readNothing(Double.MaxValue)
+      trailingPercent <- if version >= 30 then readDoubleMax else readNothing(Double.MaxValue)
       comboLegFields <- readComboLegs(version)
       smartComboRoutingFields <- readSmartComboRoutingParams(version)
       scaleFields <- readScaleOrderParams(version)
@@ -658,7 +655,7 @@ object OrderReader {
         ocaType = ocaType,
         triggerMethod = triggerMethod,
         volOrderFields = volOrderFields,
-        trailingParams = trailParams,
+        // trailingParams = trailParams,
         orderComboLegs = comboLegFields.orderComboLegs,
         smartComboRoutingFields = smartComboRoutingFields,
         scaleFields = scaleFields,

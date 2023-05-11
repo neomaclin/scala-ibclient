@@ -181,8 +181,8 @@ object PlaceOrderWriter {
         else writeNothing
       _ <- write(a.order.volOrderFields.map(_.continuousUpdate).get)
       _ <- write(a.order.volOrderFields.map(_.referencePriceType).get)
-      _ <- write(a.order.trailingParams.stopPrice)
-      _ <- write(a.order.trailingParams.trailingPercent)
+      _ <- write(a.order.trailStopPrice)
+      _ <- write(a.order.trailingPercent)
       _ <- write(a.order.scaleFields.scaleInitLevelSize)
       _ <- write(a.order.scaleFields.scaleSubsLevelSize)
       _ <- write(a.order.scaleFields.scalePriceIncrement)
