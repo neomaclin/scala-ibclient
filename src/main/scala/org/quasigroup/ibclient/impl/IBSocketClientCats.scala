@@ -10,7 +10,8 @@ import org.quasigroup.ibclient.decoder.Decoder
 import org.quasigroup.ibclient.exceptions.InvalidMessageLengthException
 import org.quasigroup.ibclient.request.{MsgEncoders, RequestMsg}
 import org.quasigroup.ibclient.request.RequestMsg.*
-import org.quasigroup.ibclient.response.ResponseMsg
+import org.quasigroup.ibclient.request.MsgEncoders.given
+import org.quasigroup.ibclient.response.{ResponseMsg, MsgDecoders}
 import org.quasigroup.ibclient.response.ResponseMsg.*
 import org.quasigroup.ibclient.response.MsgDecoders.given
 import cats.effect.*
@@ -29,8 +30,6 @@ import scodec.codecs.*
 
 import scala.concurrent.duration.DurationInt
 import scala.reflect.ClassTag
-import org.quasigroup.ibclient.response.MsgDecoders
-import cats.instances.seq
 import java.time.ZoneId
 
 class IBSocketClientCats[F[_]: Async: Console](
@@ -40,7 +39,6 @@ class IBSocketClientCats[F[_]: Async: Console](
   private final val MAX_MSG_LENGTH: Int = 0xffffff
   import IBSocketClientCats.{*, given}
 
- 
   private val requestRateLimiterRef: Ref[F, Int] = Ref.unsafe(50)
   private val msgPushingFiberDeferred =
     Deferred.unsafe[F, Fiber[F, Throwable, Unit]]
@@ -49,7 +47,7 @@ class IBSocketClientCats[F[_]: Async: Console](
     Deferred.unsafe[F, Fiber[F, Throwable, Unit]]
   private val _clientId = Deferred.unsafe[F, Int]
   private val _serverVersion = Deferred.unsafe[F, IBClient.ServerVersion]
-  private val _serverTimeZone:Ref[F, ZoneId] = Ref.unsafe(ZoneId.systemDefault())
+  private val _serverTimeZone: Ref[F, ZoneId] = Ref.unsafe(ZoneId.systemDefault())
 
   private def startMsgConsumption: F[Unit] =
     for
@@ -99,14 +97,8 @@ class IBSocketClientCats[F[_]: Async: Console](
           )
     yield rawMessage
 
-  private def fetchSingleResponse[
-      Req <: RequestMsg: Encoder,
-      Resp <: ResponseMsg: ClassTag
-  ](
-      request: Req
-  ): F[Resp] =
+  override def fetchSingleResponse[Resp <: ResponseMsg: ClassTag]: F[Resp] =
     for
-      _ <- requestOnly(request)
       msgStream <- msgTopicDeferred.get
       resp <- msgStream.subscribeUnbounded
         .collectFirst { case item: Resp => item }
@@ -115,14 +107,8 @@ class IBSocketClientCats[F[_]: Async: Console](
         .lastOrError
     yield resp
 
-  private def fetchResponses[
-      Req <: RequestMsg: Encoder,
-      Resp <: ResponseMsg: ClassTag
-  ](
-      request: Req
-  ): Stream[F, Resp] =
+  override def fetchResponseStream[Resp <: ResponseMsg: ClassTag]: Stream[F, Resp] =
     for
-      _ <- Stream.eval(requestOnly(request))
       topic <- Stream.eval(msgTopicDeferred.get)
       position <- topic.subscribeUnbounded
         .dropWhile {
@@ -133,7 +119,7 @@ class IBSocketClientCats[F[_]: Async: Console](
         .evalTap(item => Console[F].println(s"fetched msg:$item"))
     yield position
 
-  def requestOnly[Req <: RequestMsg: Encoder](
+  override def requestOnly[Req <: RequestMsg: Encoder](
       request: Req
   ): F[Unit] =
     for
@@ -195,16 +181,23 @@ class IBSocketClientCats[F[_]: Async: Console](
       _ <- startMsgConsumption
     yield ()
 
-  override def reqFamilyCodes: F[FamilyCodes] =
-    fetchSingleResponse[ReqFamilyCodes, FamilyCodes](ReqFamilyCodes())
+  def reqFamilyCodes: F[FamilyCodes] =
+    for {
+      _ <- requestOnly[ReqFamilyCodes](ReqFamilyCodes())
+      result <- fetchSingleResponse[FamilyCodes]
+    } yield result
 
   override def reqCurrentTime: F[CurrentTime] =
-    fetchSingleResponse[ReqCurrentTime, CurrentTime](ReqCurrentTime())
+    for {
+      _ <- requestOnly[ReqCurrentTime](ReqCurrentTime())
+      result <- fetchSingleResponse[CurrentTime]
+    } yield result
 
   override def reqScannerParameters: F[ScannerParameters] =
-    fetchSingleResponse[ReqScannerParameters, ScannerParameters](
-      ReqScannerParameters()
-    )
+    for {
+      _ <- requestOnly[ReqScannerParameters](ReqScannerParameters())
+      result <- fetchSingleResponse[ScannerParameters]
+    } yield result
 
   override def setServerLogLevel(level: Int): F[Unit] =
     requestOnly[SetServerLogLevel](
@@ -212,7 +205,10 @@ class IBSocketClientCats[F[_]: Async: Console](
     )
 
   override def reqPositions: Stream[F, PositionMsg] =
-    fetchResponses[ReqPositions, PositionMsg](ReqPositions())
+    for {
+      _ <- Stream.eval(requestOnly[ReqPositions](ReqPositions()))
+      result <- fetchResponseStream[PositionMsg]
+    } yield result
 
   override def cancelPositions: F[Unit] =
     requestOnly[CancelPositions](
@@ -220,12 +216,16 @@ class IBSocketClientCats[F[_]: Async: Console](
     )
 
   override def reqManagedAccts: F[ManagedAccounts] =
-    fetchSingleResponse[ReqManagedAccts, ManagedAccounts](ReqManagedAccts())
+    for {
+      _ <- requestOnly[ReqManagedAccts](ReqManagedAccts())
+      result <- fetchSingleResponse[ManagedAccounts]
+    } yield result
 
   override def requestFA(faDataType: Int): F[ReceiveFA] =
-    fetchSingleResponse[RequestFA, ReceiveFA](
-      RequestFA(faDataType = faDataType)
-    )
+    for {
+      _ <- requestOnly[RequestFA](RequestFA(faDataType = faDataType))
+      result <- fetchSingleResponse[ReceiveFA]
+    } yield result
 
 object IBSocketClientCats:
   final case class ConnectionAck(

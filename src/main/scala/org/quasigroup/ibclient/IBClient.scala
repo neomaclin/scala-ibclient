@@ -1,9 +1,16 @@
 package org.quasigroup.ibclient
 
+import org.quasigroup.ibclient.encoder.Encoder
+import org.quasigroup.ibclient.decoder.Decoder
+import org.quasigroup.ibclient.request.RequestMsg
+import org.quasigroup.ibclient.request.RequestMsg.*
 import org.quasigroup.ibclient.response.ResponseMsg
 import org.quasigroup.ibclient.response.ResponseMsg.*
 
 import fs2.Stream
+
+import scala.concurrent.duration.DurationInt
+import scala.reflect.ClassTag
 
 trait IBClient[F[_]]:
 
@@ -12,10 +19,6 @@ trait IBClient[F[_]]:
   def reqFamilyCodes: F[FamilyCodes]
 
   def reqScannerParameters: F[ScannerParameters]
-
-  // def reqOpenOrders(): F[]
-
-  // def reqNewsBulletins(allMsgs: Boolean): F[UpdateNewsBulletin]
 
   def setServerLogLevel(level: Int): F[Unit]
 
@@ -26,6 +29,12 @@ trait IBClient[F[_]]:
   def reqManagedAccts: F[ManagedAccounts]
 
   def requestFA(faDataType: Int): F[ReceiveFA]
+
+  def requestOnly[Req <: RequestMsg: Encoder](request: Req): F[Unit]
+
+  def fetchSingleResponse[Resp <: ResponseMsg: ClassTag]: F[Resp]
+
+  def fetchResponseStream[Resp <: ResponseMsg: ClassTag]: Stream[F, Resp]
 
 end IBClient
 
