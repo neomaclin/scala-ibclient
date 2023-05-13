@@ -2,7 +2,7 @@ package org.quasigroup.ibclient
 
 import org.quasigroup.ibclient.types.*
 
-class ContractSpec:
+trait ContractSpec:
 
   val USStockWithPrimaryExch =
     Contract(symbol = "SPY", secType = SecType.STK, currency = "USD", exchange = "SMART", primaryExch = "ARCA")

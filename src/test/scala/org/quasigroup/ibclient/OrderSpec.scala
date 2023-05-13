@@ -2,7 +2,7 @@ package org.quasigroup.ibclient
 
 import org.quasigroup.ibclient.types.*
 
-class OrderSpec:
+trait OrderSpec:
 
   def AtAuction(action: Action, quantity: Decimal, price: Double): Order =
     Order(

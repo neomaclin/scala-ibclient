@@ -1,36 +1,76 @@
 package org.quasigroup.ibclient
 
+import org.quasigroup.ibclient.types.*
+import org.quasigroup.ibclient.types.TypesCodec.given
+
 import org.quasigroup.ibclient.encoder.Encoder
+import org.quasigroup.ibclient.encoder.Encoder.{*, given}
 import org.quasigroup.ibclient.decoder.Decoder
+import org.quasigroup.ibclient.decoder.Decoder.{*, given}
 import org.quasigroup.ibclient.request.RequestMsg
 import org.quasigroup.ibclient.request.RequestMsg.*
+import org.quasigroup.ibclient.request.MsgEncoders.{*, given}
 import org.quasigroup.ibclient.response.ResponseMsg
 import org.quasigroup.ibclient.response.ResponseMsg.*
+import org.quasigroup.ibclient.response.MsgDecoders.{*, given}
 
+import cats.effect.Async
+import cats.effect.syntax.all.*
+import cats.syntax.all.*
 import fs2.Stream
 
 import scala.concurrent.duration.DurationInt
 import scala.reflect.ClassTag
 
-trait IBClient[F[_]]:
+trait IBClient[F[_]: Async]:
 
-  def reqCurrentTime: F[CurrentTime]
+  def reqFamilyCodes: F[FamilyCodes] =
+    for {
+      _ <- requestOnly[ReqFamilyCodes](ReqFamilyCodes())
+      result <- fetchSingleResponse[FamilyCodes]
+    } yield result
 
-  def reqFamilyCodes: F[FamilyCodes]
+  def reqCurrentTime: F[CurrentTime] =
+    for {
+      _ <- requestOnly[ReqCurrentTime](ReqCurrentTime())
+      result <- fetchSingleResponse[CurrentTime]
+    } yield result
 
-  def reqScannerParameters: F[ScannerParameters]
+  def reqScannerParameters: F[ScannerParameters] =
+    for {
+      _ <- requestOnly[ReqScannerParameters](ReqScannerParameters())
+      result <- fetchSingleResponse[ScannerParameters]
+    } yield result
 
-  def setServerLogLevel(level: Int): F[Unit]
+  def setServerLogLevel(level: Int): F[Unit] =
+    requestOnly[SetServerLogLevel](
+      SetServerLogLevel(loglevel = level)
+    )
 
-  def reqPositions: Stream[F, PositionMsg]
+  def reqPositions: Stream[F, PositionMsg] =
+    for {
+      _ <- Stream.eval(requestOnly[ReqPositions](ReqPositions()))
+      result <- fetchResponseStream[PositionMsg]
+    } yield result
 
-  def cancelPositions: F[Unit]
+  def cancelPositions: F[Unit] =
+    requestOnly[CancelPositions](
+      CancelPositions()
+    )
 
-  def reqManagedAccts: F[ManagedAccounts]
+  def reqManagedAccts: F[ManagedAccounts] =
+    for {
+      _ <- requestOnly[ReqManagedAccts](ReqManagedAccts())
+      result <- fetchSingleResponse[ManagedAccounts]
+    } yield result
 
-  def requestFA(faDataType: Int): F[ReceiveFA]
+  def requestFA(faDataType: Int): F[ReceiveFA] =
+    for {
+      _ <- requestOnly[RequestFA](RequestFA(faDataType = faDataType))
+      result <- fetchSingleResponse[ReceiveFA]
+    } yield result
 
-  def requestOnly[Req <: RequestMsg: Encoder](request: Req): F[Unit]
+  def requestOnly[Req <: RequestMsg: MsgEncoder](request: Req): F[Unit]
 
   def fetchSingleResponse[Resp <: ResponseMsg: ClassTag]: F[Resp]
 

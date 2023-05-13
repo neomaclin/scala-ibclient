@@ -15,6 +15,7 @@ object ReqHistoricalDataWriter {
       _ <- write(a.version)
       _ <- write(a.tickerId)
       _ <- ContractWriter(a.contract)
+      _ <- write(a.contract.includeExpired)
       _ <- write(a.endDateTime)
       _ <- write(a.barSizeSetting)
       _ <- write(a.durationStr)

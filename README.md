@@ -30,11 +30,14 @@ Of course, using Cats Effect also comes with some trade-offs, such as:
 Ultimately, the choice of using Cats Effect or Core Java depends on your use case, preferences, and goals. 
 
 Source of this section: Conversation with Bing with minor adjustment, 5/11/2023
+
 (1) Tutorial · Cats Effect - Typelevel. https://typelevel.org/cats-effect/docs/tutorial.
+
 (2) Introduction to Cats Effects | Baeldung on Scala. https://www.baeldung.com/scala/cats-effects-intro.
+
 (3) Concepts · Cats Effect - Typelevel. https://typelevel.org/cats-effect/docs/concepts.
 
 
 # Prerequisite
 
-User of this project does require an interactive user account.
+User of this project does require an interactive broker user account.

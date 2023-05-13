@@ -54,6 +54,10 @@ object MsgEncoders:
     def apply(a: ReqMktDepth)(using serverVersion: IBClient.ServerVersion): mutable.Buffer[Byte] =
       ReqMktDepthWriter(a)(using serverVersion).runS(mutable.Buffer.empty).value
 
+  inline given MsgEncoder[ReqHistogramData] with
+    def apply(a: ReqHistogramData)(using serverVersion: IBClient.ServerVersion): mutable.Buffer[Byte] =
+      ReqHistogramDataWriter(a)(using serverVersion).runS(mutable.Buffer.empty).value
+
   inline given MsgEncoder[ReqMktData] with
     def apply(a: ReqMktData)(using serverVersion: IBClient.ServerVersion): mutable.Buffer[Byte] =
       ReqMktDataWriter(a)(using serverVersion).runS(mutable.Buffer.empty).value

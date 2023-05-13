@@ -2,20 +2,25 @@ package org.quasigroup.ibclient.impl
 
 import org.quasigroup.ibclient.IBClient
 import org.quasigroup.ibclient.IBClient.*
+
+import org.quasigroup.ibclient.exceptions.InvalidMessageLengthException
+
 import org.quasigroup.ibclient.types.*
 import org.quasigroup.ibclient.types.TypesCodec.given
+
 import org.quasigroup.ibclient.encoder.Encoder
 import org.quasigroup.ibclient.encoder.Encoder.{*, given}
 import org.quasigroup.ibclient.decoder.Decoder
-import org.quasigroup.ibclient.exceptions.InvalidMessageLengthException
-import org.quasigroup.ibclient.request.{MsgEncoders, RequestMsg}
+import org.quasigroup.ibclient.decoder.Decoder.{*, given}
+import org.quasigroup.ibclient.request.RequestMsg
 import org.quasigroup.ibclient.request.RequestMsg.*
-import org.quasigroup.ibclient.request.MsgEncoders.given
-import org.quasigroup.ibclient.response.{ResponseMsg, MsgDecoders}
+import org.quasigroup.ibclient.request.MsgEncoders.{*, given}
+import org.quasigroup.ibclient.response.ResponseMsg
 import org.quasigroup.ibclient.response.ResponseMsg.*
-import org.quasigroup.ibclient.response.MsgDecoders.given
+import org.quasigroup.ibclient.response.MsgDecoders.{*, given}
+
 import cats.effect.*
-import cats.effect.std.{Backpressure, Console, Mutex, Queue}
+import cats.effect.std.{Console, Mutex, Queue}
 import cats.effect.syntax.all.*
 import cats.syntax.all.*
 import com.comcast.ip4s.*
@@ -67,7 +72,7 @@ class IBSocketClientCats[F[_]: Async: Console](
           socket.reads
             .through(ibFramesString.toPipeByte)
             .evalTap(strs => Console[F].println(strs.mkString("[", ",", "]")))
-            .evalMap(MsgDecoders.decode(_).liftTo[F])
+            .evalMap(decode(_).liftTo[F])
             .evalTap(Console[F].println)
             .takeThrough(_ != ConnectionClosed)
             .evalTap(msgQueue.offer)
@@ -119,12 +124,12 @@ class IBSocketClientCats[F[_]: Async: Console](
         .evalTap(item => Console[F].println(s"fetched msg:$item"))
     yield position
 
-  override def requestOnly[Req <: RequestMsg: Encoder](
+  override def requestOnly[Req <: RequestMsg: MsgEncoder](
       request: Req
   ): F[Unit] =
     for
       given ServerVersion <- _serverVersion.get
-      bytes <- MsgEncoders.encode[F, Req](request)
+      bytes <- encode[F, Req](request)
       _ <- requestRateLimiterRef.get.iterateUntil(_ > 0)
       _ <- requestRateLimiterRef.update(_ - 1)
       _ <- socket.write(Chunk.array(bytes))
@@ -132,7 +137,7 @@ class IBSocketClientCats[F[_]: Async: Console](
 
   private def eConnect(clientId: Int): F[ConnectionAck] =
     for
-      encoded <- ("API\u0000".getBytes ++ MsgEncoders.unsafeEncode[String](
+      encoded <- ("API\u0000".getBytes ++ unsafeEncode[String](
         buildVersionString(MIN_VERSION, MAX_VERSION)
       )).pure
       _ <- socket.write(Chunk.array(encoded))
@@ -180,52 +185,6 @@ class IBSocketClientCats[F[_]: Async: Console](
       _ <- Console[F].println("Start msg pulling")
       _ <- startMsgConsumption
     yield ()
-
-  def reqFamilyCodes: F[FamilyCodes] =
-    for {
-      _ <- requestOnly[ReqFamilyCodes](ReqFamilyCodes())
-      result <- fetchSingleResponse[FamilyCodes]
-    } yield result
-
-  override def reqCurrentTime: F[CurrentTime] =
-    for {
-      _ <- requestOnly[ReqCurrentTime](ReqCurrentTime())
-      result <- fetchSingleResponse[CurrentTime]
-    } yield result
-
-  override def reqScannerParameters: F[ScannerParameters] =
-    for {
-      _ <- requestOnly[ReqScannerParameters](ReqScannerParameters())
-      result <- fetchSingleResponse[ScannerParameters]
-    } yield result
-
-  override def setServerLogLevel(level: Int): F[Unit] =
-    requestOnly[SetServerLogLevel](
-      SetServerLogLevel(loglevel = level)
-    )
-
-  override def reqPositions: Stream[F, PositionMsg] =
-    for {
-      _ <- Stream.eval(requestOnly[ReqPositions](ReqPositions()))
-      result <- fetchResponseStream[PositionMsg]
-    } yield result
-
-  override def cancelPositions: F[Unit] =
-    requestOnly[CancelPositions](
-      CancelPositions()
-    )
-
-  override def reqManagedAccts: F[ManagedAccounts] =
-    for {
-      _ <- requestOnly[ReqManagedAccts](ReqManagedAccts())
-      result <- fetchSingleResponse[ManagedAccounts]
-    } yield result
-
-  override def requestFA(faDataType: Int): F[ReceiveFA] =
-    for {
-      _ <- requestOnly[RequestFA](RequestFA(faDataType = faDataType))
-      result <- fetchSingleResponse[ReceiveFA]
-    } yield result
 
 object IBSocketClientCats:
   final case class ConnectionAck(
