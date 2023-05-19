@@ -13,6 +13,8 @@ import org.quasigroup.ibclient.request.writers.{ExerciseOptionsWriter, ReqMktDep
 
 import scala.collection.mutable
 import scala.util.Try
+
+import scala.compiletime.{erasedValue, summonInline}
 object MsgEncoders:
 
   trait MsgEncoder[A] {
@@ -31,7 +33,7 @@ object MsgEncoders:
   inline def encode[F[_]: MonadThrow, T: MsgEncoder](raw: T)(using
       serverVersion: IBClient.ServerVersion
   ): F[Array[Byte]] = {
-    Try(prependingLength(summon[MsgEncoder[T]].apply(raw)(using serverVersion))).liftTo[F]
+    Try(prependingLength(summonInline[MsgEncoder[T]].apply(raw)(using serverVersion))).liftTo[F]
   }
   // Try(unsafeEncode(raw)).liftTo[F]
 

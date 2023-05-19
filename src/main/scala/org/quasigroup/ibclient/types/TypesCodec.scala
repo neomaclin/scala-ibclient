@@ -54,6 +54,9 @@ object TypesCodec:
 
   inline given Decoder[Liquidities] = summon[Decoder[Int]].map(Liquidities.fromOrdinal)
 
+  inline given Encoder[MktDataType] =
+    summon[Encoder[Int]].contramap(_.ordinal)
+
   inline given Decoder[MktDataType] =
     summon[Decoder[Int]].map(MktDataType.fromOrdinal)
 
@@ -140,6 +143,12 @@ object TypesCodec:
     summon[Decoder[String]].map(SecIdType.valueOf)
 
   inline given Encoder[SecIdType] =
+    summon[Encoder[String]].contramap(_.toString)
+
+  inline given Decoder[WhatToShow] =
+    summon[Decoder[String]].map(WhatToShow.valueOf)
+
+  inline given Encoder[WhatToShow] =
     summon[Encoder[String]].contramap(_.toString)
 
   inline given Encoder[ContractRight] with

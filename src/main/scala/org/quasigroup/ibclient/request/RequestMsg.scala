@@ -87,7 +87,7 @@ enum RequestMsg:
       endDateTime: String,
       durationStr: String,
       barSizeSetting: String,
-      whatToShow: String,
+      whatToShow: WhatToShow,
       useRTH: Int,
       formatDate: Int,
       keepUpToDate: Boolean,
@@ -106,7 +106,7 @@ enum RequestMsg:
       tickerId: Int,
       contract: Contract,
       barSize: Int,
-      whatToShow: String,
+      whatToShow: WhatToShow,
       useRTH: Boolean,
       realTimeBarsOptions: List[TagValue]
   ) extends RequestMsg
@@ -305,7 +305,7 @@ enum RequestMsg:
   case ReqMarketDataType(
       msgId: Int = REQ_MARKET_DATA_TYPE,
       version: Int = 1,
-      marketDataType: Int
+      marketDataType: MktDataType
   ) extends RequestMsg
 
   case ReqPositions(
@@ -438,7 +438,7 @@ enum RequestMsg:
       startDateTime: String,
       endDateTime: String,
       numberOfTicks: Int,
-      whatToShow: String,
+      whatToShow: WhatToShow,
       useRTH: Int,
       ignoreSize: Boolean,
       miscOptions: List[TagValue]
@@ -471,7 +471,7 @@ enum RequestMsg:
       msgId: Int = REQ_HEAD_TIMESTAMP,
       tickerId: Int,
       contract: Contract,
-      whatToShow: String,
+      whatToShow: WhatToShow,
       useRTH: Int,
       formatDate: Int
   ) extends RequestMsg

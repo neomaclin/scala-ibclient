@@ -24,6 +24,12 @@ import scala.reflect.ClassTag
 
 trait IBClient[F[_]: Async]:
 
+  def requestOnly[Req <: RequestMsg: MsgEncoder](request: Req): F[Unit]
+
+  def fetchSingleResponse[Resp <: ResponseMsg: ClassTag]: F[Resp]
+
+  def fetchResponseStream[Resp <: ResponseMsg: ClassTag]: Stream[F, Resp]
+
   def reqFamilyCodes: F[FamilyCodes] =
     for {
       _ <- requestOnly[ReqFamilyCodes](ReqFamilyCodes())
@@ -47,11 +53,7 @@ trait IBClient[F[_]: Async]:
       SetServerLogLevel(loglevel = level)
     )
 
-  def reqPositions: Stream[F, PositionMsg] =
-    for {
-      _ <- Stream.eval(requestOnly[ReqPositions](ReqPositions()))
-      result <- fetchResponseStream[PositionMsg]
-    } yield result
+  def reqPositions: Stream[F, PositionMsg] = requestStreamResponse[ReqPositions, PositionMsg](ReqPositions())
 
   def cancelPositions: F[Unit] =
     requestOnly[CancelPositions](
@@ -59,10 +61,7 @@ trait IBClient[F[_]: Async]:
     )
 
   def reqManagedAccts: F[ManagedAccounts] =
-    for {
-      _ <- requestOnly[ReqManagedAccts](ReqManagedAccts())
-      result <- fetchSingleResponse[ManagedAccounts]
-    } yield result
+    requestSingleResponse[ReqManagedAccts, ManagedAccounts](ReqManagedAccts())
 
   def requestFA(faDataType: Int): F[ReceiveFA] =
     for {
@@ -70,11 +69,19 @@ trait IBClient[F[_]: Async]:
       result <- fetchSingleResponse[ReceiveFA]
     } yield result
 
-  def requestOnly[Req <: RequestMsg: MsgEncoder](request: Req): F[Unit]
+  def requestSingleResponse[Req <: RequestMsg: MsgEncoder, Resp <: ResponseMsg: ClassTag](request: Req): F[Resp] =
+    for
+      _ <- requestOnly[Req](request)
+      result <- fetchSingleResponse[Resp]
+    yield result
 
-  def fetchSingleResponse[Resp <: ResponseMsg: ClassTag]: F[Resp]
-
-  def fetchResponseStream[Resp <: ResponseMsg: ClassTag]: Stream[F, Resp]
+  def requestStreamResponse[Req <: RequestMsg: MsgEncoder, Resp <: ResponseMsg: ClassTag](
+      request: Req
+  ): Stream[F, Resp] =
+    for
+      _ <- Stream.eval(requestOnly[Req](request))
+      result <- fetchResponseStream[Resp]
+    yield result
 
 end IBClient
 

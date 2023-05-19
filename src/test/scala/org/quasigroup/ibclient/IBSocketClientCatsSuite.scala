@@ -37,12 +37,120 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers with ContractSpec w
       _ <- ibclient.requestOnly[ReqHistogramData](
         ReqHistogramData(tickerId = tickerId, contract = USStock, useRTH = false, timePeriod = "3 days")
       )
+      //
       _ <- ibclient.requestOnly[CancelHistogramData](CancelHistogramData(tickerId = tickerId))
     } yield {
       success
     }
-
   }
+
+  test("obtain historical ticks") { case (ibclient, random) =>
+    for {
+      reqId1 <- random.nextInt
+      req1 <- ReqHistoricalTicks(
+        reqId = reqId1,
+        contract = USStockAtSmart,
+        startDateTime = "20220808 10:00:00 US/Eastern",
+        endDateTime = "",
+        numberOfTicks = 10,
+        whatToShow = WhatToShow.TRADES,
+        useRTH = 1,
+        ignoreSize = true,
+        miscOptions = Nil
+      ).pure
+      _ <- ibclient.requestOnly[ReqHistoricalTicks](req1)
+      reqId2 <- random.nextInt
+      _ <- ibclient.requestOnly[ReqHistoricalTicks](req1.copy(reqId = reqId2, whatToShow = WhatToShow.BID_ASK))
+      reqId3 <- random.nextInt
+      _ <- ibclient.requestOnly[ReqHistoricalTicks](req1.copy(reqId = reqId3, whatToShow = WhatToShow.MIDPOINT))
+    } yield {
+      success
+    }
+  }
+
+  test("obtain pnls") { case (ibclient, random) =>
+    for {
+      reqId <- random.nextInt
+      _ <- ibclient.requestOnly[ReqPnL](ReqPnL(reqId = reqId, account = "DUD00029", modelCode = ""))
+      _ <- ibclient.requestOnly[CancelPnL](CancelPnL(reqId = reqId))
+    } yield {
+      success
+    }
+  }
+
+  test("obtain pnl single") { case (ibclient, random) =>
+    for {
+      reqId <- random.nextInt
+      _ <- ibclient.requestOnly[ReqPnLSingle](
+        ReqPnLSingle(reqId = reqId, account = "DUD00029", modelCode = "", conId = 268084)
+      )
+      _ <- ibclient.requestOnly[CancelPnLSingle](CancelPnLSingle(reqId = reqId))
+    } yield {
+      success
+    }
+  }
+
+  test("obtain news bulletins") { case (ibclient, random) =>
+    for {
+      // reqId <- random.nextInt
+      ReqNewsBulletins <- ibclient
+        .requestStreamResponse[ReqNewsBulletins, UpdateNewsBulletin](ReqNewsBulletins(allMsgs = true))
+        .take(100)
+        .compile
+        .toList
+      _ <- ibclient.requestOnly[CancelNewsBulletins](CancelNewsBulletins())
+    } yield {
+      success
+    }
+  }
+
+  test("test Display Groups") { case (ibclient, random) =>
+    for {
+      // reqId <- random.nextInt
+      newsBulletins <- ibclient
+        .requestStreamResponse[ReqNewsBulletins, UpdateNewsBulletin](ReqNewsBulletins(allMsgs = true))
+        .take(100)
+        .compile
+        .toList
+      _ <- ibclient.requestOnly[CancelNewsBulletins](CancelNewsBulletins())
+    } yield {
+      success
+    }
+  }
+
+  test("tick Data Operations") { case (ibclient, random) =>
+    for {
+      // reqId <- random.nextInt
+       _ <- ibclient.requestOnly[ReqMarketDataType](ReqMarketDataType(marketDataType = MktDataType.DelayedFrozen))
+     
+    } yield {
+      success
+    }
+  }
+
+  test("tick Option Computations") { case (ibclient, random) =>
+    for {
+      // reqId <- random.nextInt
+       _ <- ibclient.requestOnly[ReqMarketDataType](ReqMarketDataType(marketDataType = MktDataType.DelayedFrozen))
+     
+    } yield {
+      success
+    }
+  }
+
+
+  test("realTime Bars") { case (ibclient, random) =>
+    for {
+      // reqId <- random.nextInt
+      tickerId <- random.nextInt
+       _ <- ibclient.requestOnly[ReqRealTimeBars](ReqRealTimeBars(tickerId = tickerId, contract = EurGbpFx, barSize = 5, whatToShow = WhatToShow.Midpoint, useRTH = true, realTimeBarsOptions = Nil))
+     
+    } yield {
+      success
+    }
+  }
+
+
 //   test("ibclient can request for current time") { case (ibclient,random) =>
 //     for {
 //       now <- IO.realTimeInstant

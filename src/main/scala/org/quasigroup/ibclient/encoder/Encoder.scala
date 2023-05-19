@@ -63,10 +63,9 @@ object Encoder:
       case _: (t *: ts)  => summonInline[Encoder[t]] :: summonAll[ts]
 
   inline given derived[T](using m: Mirror.Of[T]): Encoder[T] =
-    lazy val encoders = summonAll[m.MirroredElemTypes]
     inline m match
       case s: Mirror.SumOf[T]     => encoderSimplySum(s)
-      case p: Mirror.ProductOf[T] => encoderProduct(p, encoders)
+      case p: Mirror.ProductOf[T] => encoderProduct(p, summonAll[m.MirroredElemTypes])
 
   inline given encodelist[T](using encoder: Encoder[T]): Encoder[List[T]] =
     new Encoder[List[T]]:
