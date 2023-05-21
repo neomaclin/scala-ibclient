@@ -1,11 +1,10 @@
 package org.quasigroup.ibclient.types
 
+import org.quasigroup.ibclient.encoder.Encoder
+import org.quasigroup.ibclient.decoder.Decoder
 import org.quasigroup.ibclient.encoder.Encoder.{*, given}
 import org.quasigroup.ibclient.decoder.Decoder.{*, given}
-import org.quasigroup.ibclient.decoder.Decoder
-import org.quasigroup.ibclient.encoder.Encoder
 
-import java.io.{ByteArrayOutputStream, ObjectOutputStream}
 import scala.collection.mutable
 
 object TypesCodec:
@@ -181,8 +180,8 @@ object TypesCodec:
       Rule80A.values.find(_.value == str).toRight(new Exception("unknown Rule80A type"))
     )
 
-  inline given Encoder[TagValue] =
-    summon[Encoder[String]].contramap(tag => tag.tag + "=" + tag.value + ";")
+  inline given Encoder[List[TagValue]] =
+    summon[Encoder[String]].contramap(list => list.map(tag => tag.tag + "=" + tag.value + ";").foldLeft("")(_++_))
 
   inline given Decoder[ContractRight] =
     summon[Decoder[String]].map(ContractRight.fromString)

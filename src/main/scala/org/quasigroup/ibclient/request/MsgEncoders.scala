@@ -33,7 +33,7 @@ object MsgEncoders:
   inline def encode[F[_]: MonadThrow, T: MsgEncoder](raw: T)(using
       serverVersion: IBClient.ServerVersion
   ): F[Array[Byte]] = {
-    Try(prependingLength(summonInline[MsgEncoder[T]].apply(raw)(using serverVersion))).liftTo[F]
+    Try(prependingLength(summonInline[MsgEncoder[T]](raw)(using serverVersion))).liftTo[F]
   }
   // Try(unsafeEncode(raw)).liftTo[F]
 

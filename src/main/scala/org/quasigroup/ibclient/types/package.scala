@@ -28,7 +28,7 @@ final case class ComboLeg(
 )
 
 final case class Contract(
-    conId: Int = -1,
+    conId: Int = 0,
     symbol: String = "",
     secType: SecType = SecType.None,
     lastTradeDateOrContractMonth: String = "",

@@ -67,10 +67,10 @@ object Encoder:
       case s: Mirror.SumOf[T]     => encoderSimplySum(s)
       case p: Mirror.ProductOf[T] => encoderProduct(p, summonAll[m.MirroredElemTypes])
 
-  inline given encodelist[T](using encoder: Encoder[T]): Encoder[List[T]] =
-    new Encoder[List[T]]:
-      def apply(t: List[T]): mutable.Buffer[Byte] =
-        t.foldLeft(mutable.Buffer.empty)(_ ++ encoder(_))
+//  inline given encodelist[T](using encoder: Encoder[T]): Encoder[List[T]] =
+//    new Encoder[List[T]]:
+//      def apply(t: List[T]): mutable.Buffer[Byte] =
+//        t.foldLeft(mutable.Buffer.empty)(_ ++ encoder(_))
 
   val writeNothing: EncoderState = State(_ -> ())
 
