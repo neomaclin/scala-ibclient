@@ -16,7 +16,8 @@ object Decoder {
   type ThrowableOr[A] = Either[Throwable, A]
   type DecoderState[T] = StateT[ThrowableOr, Array[String], T]
 
-  inline given Decoder[String] = (entry: Array[String]) => Right(entry.headOption.getOrElse(""))
+  inline given Decoder[String] with
+    def apply(entry: Array[String]): Either[Throwable, String] = Right(entry.headOption.getOrElse(""))
 
   inline given Decoder[Json] =
     summon[Decoder[String]].flatMap(value => if value.isEmpty then Right(Json.Null) else parse(value))

@@ -17,7 +17,8 @@ object Encoder:
 
   type EncoderState = State[mutable.Buffer[Byte], Unit]
 
-  inline given Encoder[String] = _.getBytes.toBuffer.+=(0)
+  inline given Encoder[String] with
+    def apply(a: String): mutable.Buffer[Byte] = a.getBytes.toBuffer.+=(0)
 
   inline given Encoder[Int] =
     summon[Encoder[String]].contramap(int => if int == Int.MaxValue then "" else String.valueOf(int))
@@ -25,7 +26,8 @@ object Encoder:
   inline given Encoder[Long] =
     summon[Encoder[String]].contramap(long => if long == Long.MaxValue then "" else String.valueOf(long))
 
-  inline given Encoder[Array[Byte]] = _.toBuffer
+  inline given Encoder[Array[Byte]] with
+    def apply(a: Array[Byte]): mutable.Buffer[Byte] = a.toBuffer
 
   inline given Encoder[Boolean] =
     summon[Encoder[Int]].contramap(if _ then 1 else 0)

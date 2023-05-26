@@ -33,17 +33,17 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers with ContractSpec w
     IBSocketClientCats.make[IO]().both(Resource.eval(Random.scalaUtilRandom[IO]))
 
   test("obtain histogram") { case (ibclient, random) =>
-   for {
-     tickerId <- random.nextInt
-     _ <- ibclient.requestOnly[ReqHistogramData](
-       ReqHistogramData(tickerId = tickerId, contract = USStock, useRTH = false, timePeriod = "3 days")
-     )
-     //
-     //_ <- ibclient.requestOnly[CancelHistogramData](CancelHistogramData(tickerId = tickerId))
-     _ <- IO.sleep(60 seconds)
-   } yield {
-     success
-   }
+    for {
+      tickerId <- random.nextInt
+      _ <- ibclient.requestOnly[ReqHistogramData](
+        ReqHistogramData(tickerId = tickerId, contract = USStock, useRTH = false, timePeriod = "3 days")
+      )
+      //
+      // _ <- ibclient.requestOnly[CancelHistogramData](CancelHistogramData(tickerId = tickerId))
+      _ <- IO.sleep(60 seconds)
+    } yield {
+      success
+    }
   }
 
 //    test("obtain historical ticks") { case (ibclient, random) =>
@@ -70,27 +70,27 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers with ContractSpec w
 //     }
 //   }
 
-  // test("obtain pnls") { case (ibclient, random) =>
-  //   for {
-  //     reqId <- random.nextInt
-  //     _ <- ibclient.requestOnly[ReqPnL](ReqPnL(reqId = reqId, account = "DUD00029", modelCode = ""))
-  //     _ <- ibclient.requestOnly[CancelPnL](CancelPnL(reqId = reqId))
-  //   } yield {
-  //     success
-  //   }
-  // }
+// test("obtain pnls") { case (ibclient, random) =>
+//   for {
+//     reqId <- random.nextInt
+//     _ <- ibclient.requestOnly[ReqPnL](ReqPnL(reqId = reqId, account = "DUD00029", modelCode = ""))
+//     _ <- ibclient.requestOnly[CancelPnL](CancelPnL(reqId = reqId))
+//   } yield {
+//     success
+//   }
+// }
 
-  // test("obtain pnl single") { case (ibclient, random) =>
-  //   for {
-  //     reqId <- random.nextInt
-  //     _ <- ibclient.requestOnly[ReqPnLSingle](
-  //       ReqPnLSingle(reqId = reqId, account = "DUD00029", modelCode = "", conId = 268084)
-  //     )
-  //     _ <- ibclient.requestOnly[CancelPnLSingle](CancelPnLSingle(reqId = reqId))
-  //   } yield {
-  //     success
-  //   }
-  // }
+// test("obtain pnl single") { case (ibclient, random) =>
+//   for {
+//     reqId <- random.nextInt
+//     _ <- ibclient.requestOnly[ReqPnLSingle](
+//       ReqPnLSingle(reqId = reqId, account = "DUD00029", modelCode = "", conId = 268084)
+//     )
+//     _ <- ibclient.requestOnly[CancelPnLSingle](CancelPnLSingle(reqId = reqId))
+//   } yield {
+//     success
+//   }
+// }
 
 //  test("obtain news bulletins") { case (ibclient, random) =>
 //    for {
@@ -106,59 +106,56 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers with ContractSpec w
 //    }
 //  }
 
+// test("tick Data Operations") { case (ibclient, random) =>
+//   for {
+//     // reqId <- random.nextInt
+//      _ <- ibclient.requestOnly[ReqMarketDataType](ReqMarketDataType(marketDataType = MktDataType.DelayedFrozen))
 
-  // test("tick Data Operations") { case (ibclient, random) =>
-  //   for {
-  //     // reqId <- random.nextInt
-  //      _ <- ibclient.requestOnly[ReqMarketDataType](ReqMarketDataType(marketDataType = MktDataType.DelayedFrozen))
-     
-  //   } yield {
-  //     success
-  //   }
-  // }
+//   } yield {
+//     success
+//   }
+// }
 
-  // test("tick Option Computations") { case (ibclient, random) =>
-  //   for {
-  //     // reqId <- random.nextInt
-  //      _ <- ibclient.requestOnly[ReqMarketDataType](ReqMarketDataType(marketDataType = MktDataType.DelayedFrozen))
-     
-  //   } yield {
-  //     success
-  //   }
-  // }
+// test("tick Option Computations") { case (ibclient, random) =>
+//   for {
+//     // reqId <- random.nextInt
+//      _ <- ibclient.requestOnly[ReqMarketDataType](ReqMarketDataType(marketDataType = MktDataType.DelayedFrozen))
 
+//   } yield {
+//     success
+//   }
+// }
 
-  // test("realTime Bars") { case (ibclient, random) =>
-  //   for {
-  //     // reqId <- random.nextInt
-  //     tickerId <- random.nextInt
-  //     _ <- ibclient.requestOnly[ReqRealTimeBars](ReqRealTimeBars(tickerId = tickerId, contract = EurGbpFx, barSize = 5, whatToShow = WhatToShow.MIDPOINT, useRTH = true, realTimeBarsOptions = Nil))
-  //    // _ <- ibclient.requestOnly[CancelRealTimeBars](CancelRealTimeBars(tickerId = tickerId))
-     
-  //   } yield {
-  //     success
-  //   }
-  // }
+// test("realTime Bars") { case (ibclient, random) =>
+//   for {
+//     // reqId <- random.nextInt
+//     tickerId <- random.nextInt
+//     _ <- ibclient.requestOnly[ReqRealTimeBars](ReqRealTimeBars(tickerId = tickerId, contract = EurGbpFx, barSize = 5, whatToShow = WhatToShow.MIDPOINT, useRTH = true, realTimeBarsOptions = Nil))
+//    // _ <- ibclient.requestOnly[CancelRealTimeBars](CancelRealTimeBars(tickerId = tickerId))
 
-  // test("account Operations") { case (ibclient, random) =>
-  //   for {
-  //     reqId <- random.nextInt
-  //     _ <- ibclient.requestOnly[ReqPositionsMulti](
-  //       ReqPositionsMulti(reqId = reqId, account = "DU74649", modelCode = "EUstocks")
-  //     )
-  //     //
-  //    // _ <- ibclient.requestOnly[CancelHistogramData](CancelHistogramData(tickerId = reqId))
-  //     accounts <- ibclient.reqManagedAccts
-  //     familycodes <- ibclient.reqFamilyCodes
-  //     positions <- ibclient.reqPositions.compile.toList
-  //             _ <- ibclient.cancelPositions
-  //   } yield {
-  //     expect(familycodes.familyCodes.length >= 1) and
-  //     expect(accounts.accountsList.nonEmpty) and
-  //     expect(positions.nonEmpty)
-  //   }
-  // }
+//   } yield {
+//     success
+//   }
+// }
 
+// test("account Operations") { case (ibclient, random) =>
+//   for {
+//     reqId <- random.nextInt
+//     _ <- ibclient.requestOnly[ReqPositionsMulti](
+//       ReqPositionsMulti(reqId = reqId, account = "DU74649", modelCode = "EUstocks")
+//     )
+//     //
+//    // _ <- ibclient.requestOnly[CancelHistogramData](CancelHistogramData(tickerId = reqId))
+//     accounts <- ibclient.reqManagedAccts
+//     familycodes <- ibclient.reqFamilyCodes
+//     positions <- ibclient.reqPositions.compile.toList
+//             _ <- ibclient.cancelPositions
+//   } yield {
+//     expect(familycodes.familyCodes.length >= 1) and
+//     expect(accounts.accountsList.nonEmpty) and
+//     expect(positions.nonEmpty)
+//   }
+// }
 
 //   test("ibclient can request for current time") { case (ibclient,random) =>
 //     for {
@@ -168,5 +165,3 @@ object IBSocketClientCatsSuite extends IOSuite with Checkers with ContractSpec w
 //       expect(serverTime.time <= now.getEpochSecond)
 //     }
 //   }
-
-

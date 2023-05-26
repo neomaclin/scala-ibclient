@@ -181,7 +181,7 @@ object TypesCodec:
     )
 
   inline given Encoder[List[TagValue]] =
-    summon[Encoder[String]].contramap(list => list.map(tag => tag.tag + "=" + tag.value + ";").foldLeft("")(_++_))
+    summon[Encoder[String]].contramap(list => list.map(tag => tag.tag + "=" + tag.value + ";").foldLeft("")(_ ++ _))
 
   inline given Decoder[ContractRight] =
     summon[Decoder[String]].map(ContractRight.fromString)
